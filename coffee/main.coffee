@@ -1,0 +1,2 @@
+
+Vue = require 'vue'

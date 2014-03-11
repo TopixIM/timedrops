@@ -1,0 +1,13 @@
+
+#app
+  #time
+    #now
+      #clock(v-model='now')
+    #anytime
+      input#settime(v-model='settime')
+  #menu
+    .timedrop(v-repeat='list')
+      .timeinfo
+        span.time(v-model='time')
+        span.distance(v-model='distance |')
+      .note(v-model='note')
