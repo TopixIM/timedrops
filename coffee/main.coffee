@@ -24,7 +24,7 @@ app = new Vue
     base: (new Date).toISOString()
   methods:
     markTime: ->
-      @list.unshift time: @now, note: 'nothing'
+      @list.unshift time: @now, note: '...'
     setBase: (base) ->
       @base = base
     baseNow: ->

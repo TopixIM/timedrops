@@ -14,7 +14,7 @@ body {
     display: flex;
     flex-direction: row;
     font-size: 20px;
-    font-family: Optima;
+    font-family: 'MF YueYuan (Noncommercial)', Optima, 'Hiragino Sans GB';
     background: rgb(247, 247, 247);
 }
 #time {
