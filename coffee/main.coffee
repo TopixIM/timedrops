@@ -24,7 +24,7 @@ app = new Vue
     base: (new Date).toISOString()
   methods:
     markTime: ->
-      @list.unshift time: @now, note: '...'
+      @list.unshift time: @now, note: ''
     setBase: (base) ->
       @base = base
     baseNow: ->
@@ -39,3 +39,14 @@ setInterval ->
 window.onbeforeunload = ->
   storage = JSON.stringify app.$data.list
   localStorage.setItem 'timedrops-storage', storage
+
+Vue.directive 'focus-editable',
+  bind: -> setTimeout =>
+    range = document.createRange()
+    sel = window.getSelection()
+    target = @el
+    range.setStartBefore target
+    range.setEndAfter target
+    sel.removeAllRanges();
+    sel.addRange(range);
+    @el.focus()

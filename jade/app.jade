@@ -14,5 +14,5 @@
       .timeinfo
         span.time(v-model='time | niceTime', v-on='click: setBase(time)')
         span.distance(v-model='base | toTime time')
-      .note(v-model='note', contenteditable)
+      .note(v-model='note', contenteditable, v-focus-editable)
       .close(v-on='click: remove($index)') ×
