@@ -1,19 +1,20 @@
 {
   "short_name": "Timedrops",
-  "name": "Timedrops recording",
+  "name": "Timedrops",
   "icons": [
     {
-      "src": "drop-48x48.png",
-      "sizes": "48x48",
-      "type": "image/png"
+      "src": "drop-128x128.png",
+      "sizes": "128x128"
     },
     {
       "src": "drop-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png"
+      "sizes": "96x96"
     }
   ],
   "start_url": "index.html",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "background_color": "#3E4EB8",
+  "background_color": "#3E4EB8"
+
 }

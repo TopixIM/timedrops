@@ -42,6 +42,7 @@
     [:title "Timedrops"]
     [:link
      {:rel "icon", :type "image/png", :href "drop-48x48.png"}]
+    [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
     [:link {:rel "manifest" :href "manifest.json"}]
     [:style nil "body {margin: 0;}"]
     [:style nil "body * {box-sizing: border-box;}"]]
