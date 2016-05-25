@@ -94,19 +94,19 @@
   (comp
     (transform-cirru)
     (cljs :optimizations :advanced)
-    (rev :files [#"^[\w\.]+\.js$"])
+    (rev :files [#"main.js$"])
     (html-file :data {:build? true})
     (target)))
 
 (deftask rsync []
   (fn [next-task]
     (fn [fileset]
-      (sh "rsync" "-r" "target/" "tiye:repo/Memkits/timedrops" "--exclude" "main.out" "--delete")
+      (sh "rsync" "-r" "target/" "frp.im:repo/Memkits/timedrops" "--exclude" "main.out" "--delete")
       (next-task fileset))))
 
 (deftask send-tiye []
   (comp
-    (build-simple)
+    (build-advanced)
     (rsync)))
 
 (deftask build []
