@@ -2,8 +2,12 @@
 Timedrops
 ------
 
+> WIP... with UI and large problems on storage issues.
+
 Small logger for time.
 
-Demo: http://repo.tiye.me/timedrops/
+Demo: https://frp.im/Memkits/timedrops/
 
-Just click the buttons for record of compare times.
+### License
+
+MIT

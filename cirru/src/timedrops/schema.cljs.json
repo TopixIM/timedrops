@@ -1,6 +1,1 @@
-[
-  [
-    "ns",
-    "timedrops.schema"
-  ]
-]
+[["ns","timedrops.schema"],["def","store",["{}",[":now","nil"],[":events",["{}"]]]],["def","event",["{}",[":id","nil"],[":text","|"],[":time","nil"]]]]

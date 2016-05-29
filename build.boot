@@ -6,6 +6,7 @@
                  [adzerk/boot-reload        "0.4.6"       :scope "test"]
                  [cirru/boot-cirru-sepal    "0.1.6"       :scope "test"]
                  [mrmcc3/boot-rev           "0.1.0"       :scope "test"]
+                 [org.clojure/core.async    "0.2.374"]
                  [mvc-works/hsl             "0.1.2"]
                  [mvc-works/respo           "0.1.22"]
                  [mvc-works/respo-spa       "0.1.4"]])
@@ -46,9 +47,10 @@
       (html {}
       (head {}
         (title (use-text "Timedrops"))
-        (link {:attrs {:rel "icon" :type "image/png" :href "drop-48x48.png"}})
+        (link {:attrs {:rel "icon" :type "image/png" :href "drop-192x192.png"}})
         (link (:attrs {:rel "manifest" :href "manifest.json"}))
         (meta' {:attrs {:name "viewport" :content "width=device-width, initial-scale=1"}})
+        (link {:attrs {:rel "manifest" :href "manifest.json"}})
         (style (use-text "body {margin: 0;}"))
         (style (use-text "body * {box-sizing: border-box;}"))
         (script {:attrs {:id "config" :type "text/edn" :innerHTML (pr-str data)}}))
