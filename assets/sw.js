@@ -10,8 +10,7 @@ self.addEventListener('install', function(event) {
     caches.open(appVersion).then(function(cache) {
       console.log('Opened cache');
       return cache.addAll(urlsToCache);
-    })
-  );
+    }));
 });
 
 self.addEventListener('activate', function (event) {
@@ -34,15 +33,20 @@ self.addEventListener('fetch', function(event) {
   // console.log('fetching:', event.request);
   if (event.request.url.match(/\.html/)) {
     event.respondWith(fetch(event.request).catch(function(error) {
-      console.log('no network', error);
-      caches.match(event.request).then(function(response) {
-        return response;
-      })
+      console.log('not found HTML', error)
+      return caches.match(event.request);
     }));
   } else {
     event.respondWith(
       caches.match(event.request).then(function(response) {
-        return response || fetch(event.request);
+        if (response) {
+          caches.open(appVersion).then(function(cache) {
+            return cache.put(event.request, response.clone());
+          });
+          return response;
+        } else {
+          return fetch(event.request);
+        }
       })
     );
   }
