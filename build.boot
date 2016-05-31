@@ -5,7 +5,6 @@
                  [adzerk/boot-cljs          "1.7.170-3"   :scope "test"]
                  [adzerk/boot-reload        "0.4.6"       :scope "test"]
                  [cirru/boot-cirru-sepal    "0.1.6"       :scope "test"]
-                 [mrmcc3/boot-rev           "0.1.0"       :scope "test"]
                  [org.clojure/core.async    "0.2.374"]
                  [mvc-works/hsl             "0.1.2"]
                  [mvc-works/respo           "0.1.22"]
@@ -16,7 +15,6 @@
          '[cirru-sepal.core   :refer [transform-cirru]]
          '[respo.alias        :refer [html head title script style meta' div link body]]
          '[respo.render.static-html :refer [make-html]]
-         '[mrmcc3.boot-rev    :refer [rev rev-path]]
          '[clojure.java.io    :as    io])
 
 (def +version+ "0.1.0")
@@ -39,24 +37,20 @@
 (defn use-text [x] {:attrs {:innerHTML x}})
 (defn html-dsl [data fileset]
   (make-html
-    (let [script-name "main.js"
-          resource-name
-            (if (:build? data)
-              (rev-path fileset script-name)
-              script-name)]
-      (html {}
-      (head {}
-        (title (use-text "Timedrops"))
-        (link {:attrs {:rel "icon" :type "image/png" :href "drop-192x192.png"}})
-        (link (:attrs {:rel "manifest" :href "manifest.json"}))
-        (meta' {:attrs {:name "viewport" :content "width=device-width, initial-scale=1"}})
-        (link {:attrs {:rel "manifest" :href "manifest.json"}})
-        (style (use-text "body {margin: 0;}"))
-        (style (use-text "body * {box-sizing: border-box;}"))
-        (script {:attrs {:id "config" :type "text/edn" :innerHTML (pr-str data)}}))
-      (body {}
-        (div {:attrs {:id "app"}})
-        (script {:attrs {:src resource-name}}))))))
+    (html {}
+    (head {}
+      (title (use-text "Timedrops"))
+      (link {:attrs {:rel "icon" :type "image/png" :href "drop-192x192.png"}})
+      (link (:attrs {:rel "manifest" :href "manifest.json"}))
+      (meta' {:attrs {:charset "utf-8"}})
+      (meta' {:attrs {:name "viewport" :content "width=device-width, initial-scale=1"}})
+      (link {:attrs {:rel "manifest" :href "manifest.json"}})
+      (style (use-text "body {margin: 0;}"))
+      (style (use-text "body * {box-sizing: border-box;}"))
+      (script {:attrs {:id "config" :type "text/edn" :innerHTML (pr-str data)}}))
+    (body {}
+      (div {:attrs {:id "app"}})
+      (script {:attrs {:src "main.js"}})))))
 
 (deftask html-file
   "task to generate HTML file"
@@ -99,7 +93,6 @@
   (comp
     (transform-cirru)
     (cljs :optimizations :advanced)
-    (rev :files [#"main.js$"])
     (html-file :data {:build? true})
     (target)))
 
