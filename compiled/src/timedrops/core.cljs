@@ -7,14 +7,17 @@
             [timedrops.util.id :refer [get-id!]]
             [timedrops.updater.core :refer [updater]]
             [cljs.core.async :refer [chan >! <! timeout]]
-            [cljs.reader :refer [read-string]]))
+            [cljs.reader :refer [read-string]]
+            [timedrops.util.detect :refer [in-app?]]))
+
+(defonce storage-path (if (in-app?) "timedrops-app" "timedrops-tab"))
 
 (defonce store-ref
  (atom
    (assoc
-     (let [raw (.getItem js/localStorage "timedrops")]
+     (let [raw (.getItem js/localStorage storage-path)]
        (if (some? raw) (read-string raw) schema/store))
-     :now
+     :base-time
      (.valueOf (js/Date.)))))
 
 (defonce states-ref (atom {}))
@@ -35,12 +38,15 @@
 
 (defn persistent-store []
   (let [raw (pr-str @store-ref)]
-    (.setItem js/localStorage "timedrops" raw)))
+    (.setItem js/localStorage storage-path raw)))
 
 (defn -main []
   (enable-console-print!)
   (render-app)
-  (add-watch store-ref :changes render-app)
+  (add-watch
+    store-ref
+    :changes
+    (fn [] (render-app) (persistent-store)))
   (add-watch states-ref :changes render-app)
   (println "app started!")
   (if (some? navigator.serviceWorker)
@@ -48,9 +54,7 @@
      (.register "./sw.js")
      (.then
        (fn [registration] (println "registered:" registration.core)))
-     (.catch (fn [error] (println "failed:" error)))))
-  (go (loop [] (dispatch :time/tick nil) (<! (timeout 15000)) (recur)))
-  (.addEventListener js/window "beforeunload" persistent-store))
+     (.catch (fn [error] (println "failed:" error))))))
 
 (set! js/window.onload -main)
 

@@ -1,4 +1,6 @@
 
 (ns timedrops.updater.time)
 
-(defn tick [db op-data op-id op-time] (assoc db :now op-time))
+(defn rebase [db op-data op-id op-time]
+  (let [event (get-in db [:events op-data])]
+    (assoc db :base-time (:time event))))
