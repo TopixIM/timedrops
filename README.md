@@ -2,11 +2,11 @@
 Timedrops
 ------
 
-> WIP... with UI and large problems on storage issues.
+> a time tracking tool.
 
-Small logger for time.
+### Workflow
 
-Demo: https://frp.im/Memkits/timedrops/
+https://github.com/Cumulo/cumulo-workflow
 
 ### License
 
