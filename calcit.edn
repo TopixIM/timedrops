@@ -1253,13 +1253,7 @@
                   :type :expr, :by "B1y7Rc-Zz", :at 1535565530397, :id "LAxp5ou8Oi"
                   :data {
                    "T" {:type :leaf, :by "B1y7Rc-Zz", :at 1535565536637, :text ":background-color", :id "ZIQEbqIdeF"}
-                   "j" {
-                    :type :expr, :by "B1y7Rc-Zz", :at 1535565541430, :id "D9GGMXGBjd"
-                    :data {
-                     "T" {:type :leaf, :by "B1y7Rc-Zz", :at 1535565542473, :text ":theme", :id "MkdHaM_v7_"}
-                     "j" {:type :leaf, :by "B1y7Rc-Zz", :at 1535565546181, :text "config/site", :id "r7am1TeON"}
-                    }
-                   }
+                   "j" {:type :leaf, :by "root", :at 1540103357544, :text ":white", :id "fhrBDot4QX"}
                   }
                  }
                 }
@@ -3768,7 +3762,7 @@
           :type :expr, :by "root", :at 1527867511986, :id "r1gxKOykeQ"
           :data {
            "T" {:type :leaf, :by "root", :at 1527867512819, :text ":icon", :id "r1gxKOykeQleaf"}
-           "j" {:type :leaf, :by "root", :at 1527867517723, :text "\"http://cdn.tiye.me/logo/cumulo.png", :id "B1SY_yJx7"}
+           "j" {:type :leaf, :by "root", :at 1540103277095, :text "\"http://cdn.tiye.me/logo/timedrops.png", :id "B1SY_yJx7"}
           }
          }
          "v" {

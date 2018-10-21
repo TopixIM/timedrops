@@ -12,7 +12,7 @@
   {:storage-key "workflow-storage",
    :port 11015,
    :title "Timedrops",
-   :icon "http://cdn.tiye.me/logo/cumulo.png",
+   :icon "http://cdn.tiye.me/logo/timedrops.png",
    :dev-ui "http://192.168.99.149:8100/main.css",
    :release-ui "http://cdn.tiye.me/favored-fonts/main.css",
    :cdn-url "http://cdn.tiye.me/timedrops/",
