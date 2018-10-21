@@ -13,7 +13,7 @@
    :port 11015,
    :title "Timedrops",
    :icon "http://cdn.tiye.me/logo/cumulo.png",
-   :dev-ui "http://localhost:8100/main.css",
+   :dev-ui "http://192.168.99.149:8100/main.css",
    :release-ui "http://cdn.tiye.me/favored-fonts/main.css",
    :cdn-url "http://cdn.tiye.me/timedrops/",
    :cdn-folder "tiye.me:cdn/timedrops",
