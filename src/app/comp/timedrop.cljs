@@ -21,12 +21,14 @@
  (div
   {:style (merge
            ui/row-parted
-           {:border-bottom (<< "1px solid ~{(hsl 0 0 90)}"), :padding "8px 0"})}
+           {:border-bottom (<< "1px solid ~{(hsl 0 0 94)}"), :padding "8px 0"})}
   (span
    {}
-   (<> (-> timedrop :time dayjs (.format "MM:DD HH:mm:ss")))
+   (<>
+    (-> timedrop :time dayjs (.format "MM:DD HH:mm:ss"))
+    {:font-size 20, :font-family ui/font-fancy})
    (=< 8 nil)
-   (<> (or (:text timedrop) "checked")))
+   (<> (or (:text timedrop) "checked") {:font-size 12, :color (hsl 0 0 70)}))
   (cursor->
    :confirm
    comp-confirm

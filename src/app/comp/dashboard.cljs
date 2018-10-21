@@ -41,7 +41,9 @@
        (fn [mutate!] (mutate! %cursor (assoc state :show-dialog? false)))
        (div
         {:style {:min-width 260}}
-        (<> (-> (:time state) dayjs (.format "MM-DD HH:mm:ss")))
+        (<>
+         (-> (:time state) dayjs (.format "MM-DD HH:mm:ss"))
+         {:font-size 24, :font-family ui/font-fancy})
         (div
          {}
          (input
