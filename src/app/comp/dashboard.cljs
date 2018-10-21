@@ -24,7 +24,7 @@
      {}
      (button
       {:style ui/button,
-       :inner-text "Timedrop",
+       :inner-text "Drop",
        :on-click (fn [e d! m!]
          (m! {:show-dialog? true, :draft "", :time (.now js/Date)})
          (js/setTimeout
