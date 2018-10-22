@@ -10,7 +10,7 @@
    :router (do router {:name :home, :data nil, :router nil}),
    :messages {}})
 
-(def timedrop {:id nil, :time nil, :text nil})
+(def timedrop {:id nil, :time nil, :text nil, :author-id nil})
 
 (def user {:name nil, :id nil, :nickname nil, :avatar nil, :password nil})
 

@@ -12,6 +12,11 @@
       (into {})))
 
 (deftwig
+ twig-timedrop
+ (timedrop users)
+ (assoc timedrop :user (twig-user (get users (:user-id timedrop)))))
+
+(deftwig
  twig-container
  (db session records)
  (let [logged-in? (some? (:user-id session))
@@ -25,7 +30,10 @@
                 router
                 :data
                 (case (:name router)
-                  :home (:timedrops db)
+                  :home
+                    (->> (:timedrops db)
+                         (map (fn [[k timedrop]] [k (twig-timedrop timedrop (:users db))]))
+                         (into {}))
                   :profile (twig-members (:sessions db) (:users db))
                   {})),
        :count (count (:sessions db)),

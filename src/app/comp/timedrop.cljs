@@ -27,6 +27,8 @@
    (<>
     (-> timedrop :time dayjs (.format "MM:DD HH:mm:ss"))
     {:font-size 20, :font-family ui/font-fancy})
+   (=< 16 nil)
+   (<> (get-in timedrop [:user :nickname]))
    (=< 8 nil)
    (<> (or (:text timedrop) "checked") {:font-size 12, :color (hsl 0 0 70)}))
   (cursor->
