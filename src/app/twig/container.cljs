@@ -1,6 +1,6 @@
 
 (ns app.twig.container
-  (:require [recollect.macros :refer [deftwig]]
+  (:require [recollect.twig :refer [deftwig]]
             [app.twig.user :refer [twig-user]]
             ["randomcolor" :as color]))
 
@@ -10,11 +10,6 @@
  (->> sessions
       (map (fn [[k session]] [k (get-in users [(:user-id session) :name])]))
       (into {})))
-
-(deftwig
- twig-timedrop
- (timedrop users)
- (assoc timedrop :user (twig-user (get users (:user-id timedrop)))))
 
 (deftwig
  twig-container
@@ -30,10 +25,7 @@
                 router
                 :data
                 (case (:name router)
-                  :home
-                    (->> (:timedrops db)
-                         (map (fn [[k timedrop]] [k (twig-timedrop timedrop (:users db))]))
-                         (into {}))
+                  :home (:timedrops db)
                   :profile (twig-members (:sessions db) (:users db))
                   {})),
        :count (count (:sessions db)),
