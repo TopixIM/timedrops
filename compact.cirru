@@ -455,7 +455,7 @@
             def dev? $ = "\"dev" (get-env "\"mode" "\"release")
         |site $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def site $ {} (:storage-key "\"workflow-storage") (:storage-file "\"timedrops.cirru") (:port 11015) (:title "\"Timedrops") (:icon "\"http://cdn.tiye.me/logo/timedrops.png") (:dev-ui "\"http://192.168.99.149:8100/main.css") (:release-ui "\"http://cdn.tiye.me/favored-fonts/main.css") (:cdn-url "\"http://cdn.tiye.me/timedrops/") (:cdn-folder "\"tiye.me:cdn/timedrops") (:upload-folder "\"tiye.me:repo/TopixIM/timedrops/") (:server-folder "\"tiye.me:servers/timedrops") (:theme "\"#eeeeff")
+            def site $ {} (:storage-key "\"timestops") (:storage-file "\"timedrops.cirru") (:port 11015) (:title "\"Timedrops") (:icon "\"http://cdn.tiye.me/logo/timedrops.png") (:server-folder "\"tiye.me:servers/timedrops") (:theme "\"#eeeeff")
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.config $ :require
@@ -599,7 +599,6 @@
                     do
                       wss-send! sid $ format-cirru-edn (:: :patch changes)
                       swap! *client-caches assoc sid new-store
-              new-twig-loop!
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.server $ :require (app.schema :as schema)
@@ -609,7 +608,7 @@
             app.twig.container :refer $ twig-container
             recollect.diff :refer $ diff-twig
             wss.core :refer $ wss-serve! wss-send! wss-each!
-            recollect.twig :refer $ new-twig-loop! clear-twig-caches!
+            recollect.twig :refer $ clear-twig-caches!
             app.$meta :refer $ calcit-dirname
             calcit.std.fs :refer $ path-exists? check-write-file!
             calcit.std.time :refer $ set-interval
