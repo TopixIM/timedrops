@@ -28,6 +28,14 @@ jobs:
 
     - run: caps --ci && yarn install --immutable && cr --entry server ir
 
+    - name: Verify server entry boots
+      run: |
+        status=0
+        timeout 10s yarn run-server > server.log 2>&1 || status=$?
+        cat server.log
+        test "$status" = 0 -o "$status" = 124
+        grep -q "Server started on port:" server.log
+
     - run: yarn compile-page && yarn release-page
 
     - run: mkdir -p dist-server && cp compact.cirru dist-server && cp package.json dist-server/
