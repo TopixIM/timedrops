@@ -1,5 +1,5 @@
 
-{} (:about "|file is generated - never edit directly; learn cr edit/tree workflows before changing") (:package |app)
+{} (:about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `cr query` to inspect and `cr edit`/`cr tree` to modify. Run `cr docs agents --full` first. Manual edits must follow format and schema conventions, then run `cr edit format`.") (:package |app)
   :configs $ {} (:init-fn |app.client/main!) (:reload-fn |app.client/reload!) (:version |0.0.1)
     :modules $ [] |respo.calcit/ |lilac/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
   :entries $ {}
@@ -8,16 +8,16 @@
   :files $ {}
     |app.client $ %{} :FileEntry
       :defs $ {}
-        |*states $ %{} :CodeEntry (:doc |) (:schema nil)
+        |*states $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defatom *states $ {}
               :states $ {}
                 :cursor $ []
           :examples $ []
-        |*store $ %{} :CodeEntry (:doc |) (:schema nil)
+        |*store $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote (defatom *store nil)
           :examples $ []
-        |connect! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |connect! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn connect! () $ let
                 url-obj $ url-parse js/location.href true
@@ -29,19 +29,19 @@
                   :on-close $ fn (event) (reset! *store nil) (js/console.error "|Lost connection!")
                   :on-data on-server-data
           :examples $ []
-        |dispatch! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |dispatch! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn dispatch! (op)
               when
                 and config/dev? $ not= (nth op 0) :states
                 js/console.log |Dispatch op
               tag-match op
-                  :states cursor s
+                (:states cursor s)
                   reset! *states $ update-states @*states cursor s
                 (:effect/connect) (connect!)
                 _ $ ws-send! op
           :examples $ []
-        |main! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |main! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn main! ()
               println "|Running mode:" $ if config/dev? |dev |release
@@ -53,11 +53,11 @@
                 if (nil? @*store) (connect!)
               println "|App started!"
           :examples $ []
-        |mount-target $ %{} :CodeEntry (:doc |) (:schema nil)
+        |mount-target $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def mount-target $ js/document.querySelector |.app
           :examples $ []
-        |on-server-data $ %{} :CodeEntry (:doc |) (:schema nil)
+        |on-server-data $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn on-server-data (data)
               tag-match data $
@@ -66,7 +66,7 @@
                   when config/dev? $ js/console.log |Changes changes
                   reset! *store $ patch-twig @*store changes
           :examples $ []
-        |reload! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |reload! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn reload! () $ if
               or (some? client-errors) (some? server-errors)
@@ -76,13 +76,13 @@
                 add-watch *states :changes $ fn (states prev) (render-app!)
                 println "|Code updated."
           :examples $ []
-        |render-app! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |render-app! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn render-app! () $ render! mount-target
               comp-container (:states @*states) @*store
               , dispatch!
           :examples $ []
-        |simulate-login! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |simulate-login! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn simulate-login! () $ let
                 raw $ .!getItem js/localStorage (:storage-key config/site)
@@ -108,7 +108,7 @@
             |../js-out/calcit.build-errors :default server-errors
     |app.comp.container $ %{} :FileEntry
       :defs $ {}
-        |comp-container $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-container $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-container (states store)
               let
@@ -135,7 +135,7 @@
                       fn (info d!) (d! :session/remove-message info)
                     when dev? $ comp-reel (:reel-length store) ({})
           :examples $ []
-        |comp-offline $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-offline $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-offline () $ div
               {} $ :style
@@ -155,7 +155,7 @@
                   :on-click $ fn (e d!) (d! :effect/connect nil)
                 <> "|No connection..." $ {} (:font-family ui/font-fancy) (:font-size 24)
           :examples $ []
-        |comp-status-color $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-status-color $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-status-color (color)
               div $ {}
@@ -163,7 +163,7 @@
                     size 24
                   {} (:width size) (:height size) (:position :absolute) (:bottom 60) (:left 8) (:background-color color) (:border-radius |50%) (:opacity 0.6) (:pointer-events :none)
           :examples $ []
-        |style-body $ %{} :CodeEntry (:doc |) (:schema nil)
+        |style-body $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def style-body $ {} (:padding "|8px 16px")
           :examples $ []
@@ -186,7 +186,7 @@
             [] app.comp.dashboard :refer $ [] comp-dashboard
     |app.comp.dashboard $ %{} :FileEntry
       :defs $ {}
-        |comp-dashboard $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-dashboard $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-dashboard (states timedrops)
               let
@@ -232,7 +232,8 @@
                               :value $ :draft state
                               :placeholder "|Some notes"
                               :on-input $ fn (e d!)
-                                d! cursor $ assoc state :draft (:value e)
+                                d! cursor $ assoc state :draft
+                                  str $ :value e
                           =< nil 8
                           div
                             {} $ :style ui/row-parted
@@ -261,7 +262,7 @@
             respo-alerts.core :refer $ comp-modal
     |app.comp.kit $ %{} :FileEntry
       :defs $ {}
-        |comp-title $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-title $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-title (title)
               <> title $ {} (:font-family ui/font-fancy) (:font-size 20)
@@ -277,7 +278,7 @@
             [] app.config :as config
     |app.comp.login $ %{} :FileEntry
       :defs $ {}
-        |comp-login $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-login $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-login (states)
               let
@@ -293,14 +294,16 @@
                           :value $ :username state
                           :style ui/input
                           :on-input $ fn (e d!)
-                            d! cursor $ assoc state :username (:value e)
+                            d! cursor $ assoc state :username
+                              str $ :value e
                       =< nil 8
                       div ({})
                         input $ {} (:placeholder |Password)
                           :value $ :password state
                           :style ui/input
                           :on-input $ fn (e d!)
-                            d! cursor $ assoc state :password (:value e)
+                            d! cursor $ assoc state :password
+                              str $ :value e
                     =< nil 8
                     div
                       {} $ :style
@@ -313,11 +316,11 @@
                         :style $ merge ui/link
                         :on-click $ on-submit (:username state) (:password state) false
           :examples $ []
-        |initial-state $ %{} :CodeEntry (:doc |) (:schema nil)
+        |initial-state $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def initial-state $ {} (:username |) (:password |)
           :examples $ []
-        |on-submit $ %{} :CodeEntry (:doc |) (:schema nil)
+        |on-submit $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn on-submit (username password signup?)
               fn (e dispatch!)
@@ -337,7 +340,7 @@
             [] app.config :as config
     |app.comp.navigation $ %{} :FileEntry
       :defs $ {}
-        |comp-navigation $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-navigation $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-navigation (logged-in? count-members)
               div
@@ -371,7 +374,7 @@
             [] app.config :as config
     |app.comp.profile $ %{} :FileEntry
       :defs $ {}
-        |comp-profile $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-profile $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-profile (user members)
               div
@@ -425,7 +428,7 @@
             [] app.config :as config
     |app.comp.timedrop $ %{} :FileEntry
       :defs $ {}
-        |comp-timedrop $ %{} :CodeEntry (:doc |) (:schema nil)
+        |comp-timedrop $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-timedrop (states timedrop)
               let
@@ -472,11 +475,11 @@
             [] respo-alerts.core :refer $ [] use-confirm
     |app.config $ %{} :FileEntry
       :defs $ {}
-        |dev? $ %{} :CodeEntry (:doc |) (:schema nil)
+        |dev? $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def dev? $ = |dev (get-env |mode |release)
           :examples $ []
-        |site $ %{} :CodeEntry (:doc |) (:schema nil)
+        |site $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def site $ {} (:storage-key |timestops) (:storage-file |timedrops.cirru) (:port 11015) (:title |Timedrops) (:icon |http://cdn.tiye.me/logo/timedrops.png) (:server-folder |tiye.me:servers/timedrops) (:theme |#eeeeff)
           :examples $ []
@@ -485,31 +488,31 @@
           ns app.config $ :require
     |app.schema $ %{} :FileEntry
       :defs $ {}
-        |database $ %{} :CodeEntry (:doc |) (:schema nil)
+        |database $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def database $ {}
               :sessions $ do session ({})
               :users $ do user ({})
               :timedrops $ do timedrop ({})
           :examples $ []
-        |router $ %{} :CodeEntry (:doc |) (:schema nil)
+        |router $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def router $ {} (:name nil) (:title nil)
               :data $ {}
               :router nil
           :examples $ []
-        |session $ %{} :CodeEntry (:doc |) (:schema nil)
+        |session $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def session $ {} (:user-id nil) (:id nil) (:nickname nil)
               :router $ do router
                 {} (:name :home) (:data nil) (:router nil)
               :messages $ {}
           :examples $ []
-        |timedrop $ %{} :CodeEntry (:doc |) (:schema nil)
+        |timedrop $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def timedrop $ {} (:id nil) (:time nil) (:text nil)
           :examples $ []
-        |user $ %{} :CodeEntry (:doc |) (:schema nil)
+        |user $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def user $ {} (:name nil) (:id nil) (:nickname nil) (:avatar nil) (:password nil)
           :examples $ []
@@ -517,11 +520,11 @@
         :code $ quote (ns app.schema)
     |app.server $ %{} :FileEntry
       :defs $ {}
-        |*client-caches $ %{} :CodeEntry (:doc |) (:schema nil)
+        |*client-caches $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defatom *client-caches $ {}
           :examples $ []
-        |*initial-db $ %{} :CodeEntry (:doc |) (:schema nil)
+        |*initial-db $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defatom *initial-db $ if
               path-exists? $ w-log storage-file
@@ -529,15 +532,15 @@
                 merge schema/database $ parse-cirru-edn (read-file storage-file)
               do (println "|Found no data") schema/database
           :examples $ []
-        |*reader-reel $ %{} :CodeEntry (:doc |) (:schema nil)
+        |*reader-reel $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote (defatom *reader-reel @*reel)
           :examples $ []
-        |*reel $ %{} :CodeEntry (:doc |) (:schema nil)
+        |*reel $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defatom *reel $ merge reel-schema
               {} (:base @*initial-db) (:db @*initial-db)
           :examples $ []
-        |dispatch! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |dispatch! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn dispatch! (op sid)
               let
@@ -547,7 +550,7 @@
                 if (= op :effect/persist) (persist-db!)
                   reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
           :examples $ []
-        |get-backup-path! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |get-backup-path! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn get-backup-path! () $ let
                 now $ .extract (get-time!)
@@ -555,7 +558,7 @@
                 str $ :month now
                 str (:day now) |-snapshot.cirru
           :examples $ []
-        |main! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |main! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn main! ()
               println "|Running mode:" $ if config/dev? |dev |release
@@ -569,11 +572,11 @@
               set-interval 600000 $ fn () (persist-db!)
               on-control-c on-exit!
           :examples $ []
-        |on-exit! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |on-exit! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn on-exit! () (persist-db!) (; println "|exit code is...") (quit! 0)
           :examples $ []
-        |persist-db! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |persist-db! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn persist-db! () $ let
                 file-content $ format-cirru-edn
@@ -583,7 +586,7 @@
               check-write-file! storage-path file-content
               check-write-file! backup-path file-content
           :examples $ []
-        |reload! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |reload! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn reload! () (println "|Code updated..")
               if (not config/dev?) (raise "|reloading only happens in dev mode")
@@ -591,20 +594,20 @@
               reset! *reel $ refresh-reel @*reel @*initial-db updater
               sync-clients! @*reader-reel
           :examples $ []
-        |render-loop! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |render-loop! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn render-loop! () $ when
               not $ identical? @*reader-reel @*reel
               reset! *reader-reel @*reel
               sync-clients! @*reader-reel
           :examples $ []
-        |run-server! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |run-server! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn run-server! (port)
               wss-serve! (&{} :port port)
                 fn (data)
                   tag-match data
-                      :connect sid
+                    (:connect sid)
                       do
                         dispatch! (:: :session/connect) sid
                         println "|New client."
@@ -617,13 +620,13 @@
                         dispatch! (:: :session/disconnect) sid
                     _ $ println "|unknown data:" data
           :examples $ []
-        |storage-file $ %{} :CodeEntry (:doc |) (:schema nil)
+        |storage-file $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def storage-file $ if (empty? calcit-dirname)
               str calcit-dirname $ :storage-file config/site
               str calcit-dirname |/ $ :storage-file config/site
           :examples $ []
-        |sync-clients! $ %{} :CodeEntry (:doc |) (:schema nil)
+        |sync-clients! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn sync-clients! (reel)
               wss-each! $ fn (sid)
@@ -659,7 +662,7 @@
             calcit.std.path :refer $ join-path
     |app.style $ %{} :FileEntry
       :defs $ {}
-        |link $ %{} :CodeEntry (:doc |) (:schema nil)
+        |link $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def link $ {} (:text-decoration :underline) (:cursor :pointer)
               :color $ hsl 240 80 80
@@ -672,7 +675,7 @@
             [] respo-ui.core :as ui
     |app.twig.container $ %{} :FileEntry
       :defs $ {}
-        |twig-container $ %{} :CodeEntry (:doc |) (:schema nil)
+        |twig-container $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn twig-container (db session records)
               let
@@ -692,7 +695,7 @@
                     :color $ rand-hex-color!
                   {}
           :examples $ []
-        |twig-members $ %{} :CodeEntry (:doc |) (:schema nil)
+        |twig-members $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn twig-members (sessions users)
               -> sessions $ .map-kv
@@ -707,7 +710,7 @@
             calcit.std.rand :refer $ rand-hex-color!
     |app.twig.user $ %{} :FileEntry
       :defs $ {}
-        |twig-user $ %{} :CodeEntry (:doc |) (:schema nil)
+        |twig-user $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn twig-user (user) (dissoc user :password)
           :examples $ []
@@ -716,12 +719,11 @@
           ns app.twig.user $ :require
     |app.updater $ %{} :FileEntry
       :defs $ {}
-        |updater $ %{} :CodeEntry (:doc |) (:schema nil)
+        |updater $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn updater (db op sid op-id op-time)
               tag-match op
-                  :session/connect
-                  session/connect db sid op-id op-time
+                (:session/connect) (session/connect db sid op-id op-time)
                 (:session/disconnect) (session/disconnect db sid op-id op-time)
                 (:session/remove-message op-data) (session/remove-message db op-data sid op-id op-time)
                 (:user/log-in op-data) (user/log-in db op-data sid op-id op-time)
@@ -738,7 +740,7 @@
             [] respo-message.updater :refer $ [] update-messages
     |app.updater.router $ %{} :FileEntry
       :defs $ {}
-        |change $ %{} :CodeEntry (:doc |) (:schema nil)
+        |change $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn change (db op-data sid op-id op-time)
               assoc-in db ([] :sessions sid :router) op-data
@@ -747,18 +749,18 @@
         :code $ quote (ns app.updater.router)
     |app.updater.session $ %{} :FileEntry
       :defs $ {}
-        |connect $ %{} :CodeEntry (:doc |) (:schema nil)
+        |connect $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn connect (db sid op-id op-time)
               assoc-in db ([] :sessions sid)
                 merge schema/session $ {} (:id sid)
           :examples $ []
-        |disconnect $ %{} :CodeEntry (:doc |) (:schema nil)
+        |disconnect $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn disconnect (db sid op-id op-time)
               update db :sessions $ fn (session) (dissoc session sid)
           :examples $ []
-        |remove-message $ %{} :CodeEntry (:doc |) (:schema nil)
+        |remove-message $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn remove-message (db op-data sid op-id op-time)
               update-in db ([] :sessions sid :messages)
@@ -770,13 +772,13 @@
           ns app.updater.session $ :require ([] app.schema :as schema)
     |app.updater.timedrop $ %{} :FileEntry
       :defs $ {}
-        |create-one $ %{} :CodeEntry (:doc |) (:schema nil)
+        |create-one $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn create-one (db op-data sid op-id op-time)
               assoc-in db ([] :timedrops op-id)
                 merge schema/timedrop op-data $ {} (:id op-id)
           :examples $ []
-        |remove-one $ %{} :CodeEntry (:doc |) (:schema nil)
+        |remove-one $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn remove-one (db op-data sid op-id op-time)
               update db :timedrops $ fn (timedrops) (dissoc timedrops op-data)
@@ -786,7 +788,7 @@
           ns app.updater.timedrop $ :require ([] app.schema :as schema)
     |app.updater.user $ %{} :FileEntry
       :defs $ {}
-        |log-in $ %{} :CodeEntry (:doc |) (:schema nil)
+        |log-in $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn log-in (db op-data sid op-id op-time)
               let-sugar
@@ -808,12 +810,12 @@
                         assoc messages op-id $ {} (:id op-id)
                           :text $ str "|No user named: " username
           :examples $ []
-        |log-out $ %{} :CodeEntry (:doc |) (:schema nil)
+        |log-out $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn log-out (db op-data sid op-id op-time)
               assoc-in db ([] :sessions sid :user-id) nil
           :examples $ []
-        |sign-up $ %{} :CodeEntry (:doc |) (:schema nil)
+        |sign-up $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn sign-up (db op-data sid op-id op-time)
               let-sugar
