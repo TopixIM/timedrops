@@ -3,6 +3,7 @@
 .calcit-error.cirru
 .DS_Store
 
+.calcit/
 js-out/
 node_modules/
 dist/

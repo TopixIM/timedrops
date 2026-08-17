@@ -8,9 +8,9 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - uses: actions/setup-node@v6
       with:
@@ -24,9 +24,20 @@ jobs:
 
     - uses: calcit-lang/setup-cr@0.0.9
 
-    - run: caps --ci && yarn install --immutable && cr --entry server ir
+    - name: Validate Calcit snapshot and type baseline
+      run: |
+        caps --ci
+        cr calcit.cirru edit format
+        git diff --exit-code -- calcit.cirru
+        cr calcit.cirru --check-only
+        cr calcit.cirru --entry server --check-only
+        mkdir -p .calcit/upgrade
+        cr calcit.cirru analyze check-types --summary-only --format json > .calcit/upgrade/check-types.json
+        cr calcit.cirru analyze weak-types --only schema-dynamic,code-dynamic,code-nil --intent unresolved,declared-optional --summary-only --format json > .calcit/upgrade/weak-types.json
+        cr calcit.cirru analyze deprecated --summary-only --format json > .calcit/upgrade/deprecated.json
+        node scripts/check-calcit-upgrade-baseline.mjs
 
-    - run: yarn compile-page && yarn release-page
+    - run: yarn install --immutable && cr --entry server ir && yarn compile-page && yarn release-page
 
     - run: mkdir -p dist-server && cp calcit.cirru dist-server && cp package.json dist-server/
       name: Copy server scripts
