@@ -1,35 +1,44 @@
 
-{} (:about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `cr query` to inspect and `cr edit`/`cr tree` to modify. Run `cr docs agents --full` first. Manual edits must follow format and schema conventions, then run `cr edit format`.") (:package |app)
-  :configs $ {} (:init-fn |app.client/main!) (:reload-fn |app.client/reload!) (:version |0.0.1)
-    :modules $ [] |respo.calcit/ |lilac/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
+{} (:about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `cr query` to inspect and `cr edit`/`cr tree` to modify. Run `cr docs agents --full` first. Manual edits must follow format and schema conventions, then run `cr edit format`.") (:package |app) (:version |0.0.1)
   :entries $ {}
-    :server $ {} (:init-fn |app.server/main!) (:reload-fn |app.server/reload!) (:version |0.0.0)
+    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :native) (:reload-fn 'app.client/reload!)
+      :modules $ [] |respo.calcit/ |lilac/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
+      :type-slots $ {}
+    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!)
       :modules $ [] |lilac/ |recollect/ |memof/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |calcit.std/ |calcit-wss/
+      :type-slots $ {}
   :files $ {}
-    |app.client $ %{} :FileEntry
+    |app.client $ %{} 'FileEntry
       :defs $ {}
-        |*states $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*states $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defatom *states $ {}
               :states $ {}
                 :cursor $ []
           :examples $ []
-        |*store $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |*store $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *store nil)
           :examples $ []
-        |connect! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |connect! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn connect! () $ let
-                url-obj $ url-parse js/location.href true
-                host $ either (-> url-obj .-query .-host) js/location.hostname
-                port $ either (-> url-obj .-query .-port) (:port config/site)
+                url-obj $ unsafe-coerce (url-parse js/location.href true) 'JsObject
+                query $ unsafe-coerce (.-query url-obj) 'JsObject
+                host-value $ .-host query
+                port-value $ .-port query
+                host $ if (js-present? host-value) (unsafe-coerce host-value 'String) (unsafe-coerce js/location.hostname 'String)
+                port $ if (js-present? port-value) (unsafe-coerce port-value 'String)
+                  option:unwrap $ get config/site :port
               ws-connect! (str |ws:// host |: port)
                 {}
                   :on-open $ fn (event) (simulate-login!)
                   :on-close $ fn (event) (reset! *store nil) (js/console.error "|Lost connection!")
                   :on-data on-server-data
           :examples $ []
-        |dispatch! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn dispatch! (op)
               when
@@ -41,7 +50,8 @@
                 (:effect/connect) (connect!)
                 _ $ ws-send! op
           :examples $ []
-        |main! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |main! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn main! ()
               println "|Running mode:" $ if config/dev? |dev |release
@@ -53,11 +63,13 @@
                 if (nil? @*store) (connect!)
               println "|App started!"
           :examples $ []
-        |mount-target $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def mount-target $ js/document.querySelector |.app
           :examples $ []
-        |on-server-data $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-server-data (data)
               tag-match data $
@@ -66,7 +78,8 @@
                   when config/dev? $ js/console.log |Changes changes
                   reset! *store $ patch-twig @*store changes
           :examples $ []
-        |reload! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn reload! () $ if
               or (some? client-errors) (some? server-errors)
@@ -76,22 +89,29 @@
                 add-watch *states :changes $ fn (states prev) (render-app!)
                 println "|Code updated."
           :examples $ []
-        |render-app! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn render-app! () $ render! mount-target
-              comp-container (:states @*states) @*store
+              comp-container
+                option:unwrap $ get @*states :states
+                @*store
               , dispatch!
           :examples $ []
-        |simulate-login! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn simulate-login! () $ let
-                raw $ .!getItem js/localStorage (:storage-key config/site)
-              if (some? raw)
+                raw $ js/localStorage.getItem
+                  option:unwrap $ get config/site :storage-key
+              if (js-present? raw)
                 do (println "|Found storage.")
-                  dispatch! $ :: :user/log-in (parse-cirru-edn raw)
+                  dispatch! $ :: :user/log-in
+                    parse-cirru-edn $ unsafe-coerce raw 'String
                 do $ println "|Found no storage."
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.client $ :require
             respo.core :refer $ render! clear-cache! realize-ssr!
@@ -106,36 +126,47 @@
             |bottom-tip :default hud!
             |./calcit.build-errors :default client-errors
             |../js-out/calcit.build-errors :default server-errors
-    |app.comp.container $ %{} :FileEntry
+    |app.comp.container $ %{} 'FileEntry
       :defs $ {}
-        |comp-container $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (states store)
               let
-                  state $ :data states
-                  session $ :session store
-                  router $ :router store
-                  router-data $ :data router
+                  state $ option:unwrap-or (get states :data) ({})
+                  session $ option:unwrap-or (get store :session) ({})
+                  router $ option:unwrap-or (get store :router) ({})
+                  router-data $ option:unwrap-or (get router :data) ({})
                 if (nil? store) (comp-offline)
                   div
                     {} $ :style (merge ui/global ui/fullscreen ui/column)
-                    comp-navigation (:logged-in? store) (:count store)
-                    if (:logged-in? store)
-                      case (:name router)
-                        :home $ comp-dashboard states router-data
-                        :profile $ comp-profile (:user store) (:data router)
+                    comp-navigation
+                      option:unwrap-or (get store :logged-in?) false
+                      option:unwrap-or (get store :count) 0
+                    if
+                      option:unwrap-or (get store :logged-in?) false
+                      case-default
+                        option:unwrap-or (get router :name) nil
                         <> router
+                        :home $ comp-dashboard states router-data
+                        :profile $ comp-profile
+                          option:unwrap-or (get store :user) ({})
+                          router-data
                       comp-login states
-                    comp-status-color $ :color store
+                    comp-status-color $ option:unwrap-or (get store :color) nil
                     when dev? $ comp-inspect |Store store
                       {} (:bottom 0) (:left 0) (:max-width |100%)
                     comp-messages
-                      get-in store $ [] :session :messages
+                      option:unwrap-or
+                        get-in store $ [] :session :messages
+                        {}
                       {}
                       fn (info d!) (d! :session/remove-message info)
-                    when dev? $ comp-reel (:reel-length store) ({})
+                    when dev? $ comp-reel
+                      option:unwrap-or (get store :reel-length) 0
+                      {}
           :examples $ []
-        |comp-offline $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |comp-offline $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-offline () $ div
               {} $ :style
@@ -155,7 +186,8 @@
                   :on-click $ fn (e d!) (d! :effect/connect nil)
                 <> "|No connection..." $ {} (:font-family ui/font-fancy) (:font-size 24)
           :examples $ []
-        |comp-status-color $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |comp-status-color $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-status-color (color)
               div $ {}
@@ -163,11 +195,13 @@
                     size 24
                   {} (:width size) (:height size) (:position :absolute) (:bottom 60) (:left 8) (:background-color color) (:border-radius |50%) (:opacity 0.6) (:pointer-events :none)
           :examples $ []
-        |style-body $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-body $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def style-body $ {} (:padding "|8px 16px")
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require
             [] hsl.core :refer $ [] hsl
@@ -184,14 +218,14 @@
             [] app.schema :as schema
             [] app.config :as config
             [] app.comp.dashboard :refer $ [] comp-dashboard
-    |app.comp.dashboard $ %{} :FileEntry
+    |app.comp.dashboard $ %{} 'FileEntry
       :defs $ {}
-        |comp-dashboard $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-dashboard $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-dashboard (states timedrops)
               let
-                  cursor $ :cursor states
-                  state $ or (:data states)
+                  cursor $ option:unwrap-or (get states :cursor) ([])
+                  state $ option:unwrap-or (get states :data)
                     {} (:pop? false) (:draft |) (:time nil)
                 div
                   {} $ :style
@@ -204,15 +238,22 @@
                         flipped js/setTimeout 200 $ fn ()
                           let
                               target $ js/document.querySelector |.input
-                            if (some? target) (.!focus target) (js/console.warn "|Unknown target")
+                            if (js-present? target)
+                              .!focus $ unsafe-coerce target 'JsObject
+                              js/console.warn "|Unknown target"
                   =< nil 16
                   list-> ({})
                     -> timedrops (.to-list)
                       .sort-by $ fn (pair)
-                        negate $ :time (last pair)
+                        negate $ option:unwrap-or
+                          get
+                            option:unwrap $ last pair
+                            , :time
+                          , 0
                       .map-pair $ fn (k timedrop)
                         [] k $ comp-timedrop
-                          >> states $ :id timedrop
+                          >> states $
+                            option:unwrap-or (get timedrop :id) nil
                           , timedrop
                   comp-modal
                     {} (:title |Demo)
@@ -223,17 +264,21 @@
                           {} $ :style
                             {} $ :min-width 260
                           <>
-                            -> (:time state) dayjs $ .!format "|MM-DD HH:mm:ss"
+                            unsafe-coerce
+                              ->
+                                option:unwrap-or (get state :time) 0
+                                , dayjs $ .!format "|MM-DD HH:mm:ss"
+                              , 'String
                             {} (:font-size 24) (:font-family ui/font-fancy)
                           div ({})
                             input $ {} (:class-name |input)
                               :style $ merge ui/input
                                 {} $ :width |100%
-                              :value $ :draft state
+                              :value $ option:unwrap-or (get state :draft) |
                               :placeholder "|Some notes"
                               :on-input $ fn (e d!)
                                 d! cursor $ assoc state :draft
-                                  str $ :value e
+                                  option:unwrap-or (get e :value) |
                           =< nil 8
                           div
                             {} $ :style ui/row-parted
@@ -241,13 +286,14 @@
                             button $ {} (:style ui/button) (:inner-text |Submit)
                               :on-click $ fn (e d!) (on-close d!)
                                 d! :timedrop/create-one $ {}
-                                  :time $ :time state
-                                  :text $ :draft state
-                    :pop? state
+                                  :time $ option:unwrap-or (get state :time) 0
+                                  :text $ option:unwrap-or (get state :draft) |
+                    option:unwrap-or (get state :pop?) false
                     fn (d!)
                       d! cursor $ assoc state :pop? false
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.dashboard $ :require
             [] hsl.core :refer $ [] hsl
@@ -260,14 +306,15 @@
             [] |dayjs :default dayjs
             [] app.comp.timedrop :refer $ [] comp-timedrop
             respo-alerts.core :refer $ comp-modal
-    |app.comp.kit $ %{} :FileEntry
+    |app.comp.kit $ %{} 'FileEntry
       :defs $ {}
-        |comp-title $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-title $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-title (title)
               <> title $ {} (:font-family ui/font-fancy) (:font-size 20)
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.kit $ :require
             [] hsl.core :refer $ [] hsl
@@ -276,14 +323,14 @@
             [] respo.core :refer $ [] defcomp list-> <> span div button
             [] respo.comp.space :refer $ [] =<
             [] app.config :as config
-    |app.comp.login $ %{} :FileEntry
+    |app.comp.login $ %{} 'FileEntry
       :defs $ {}
-        |comp-login $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-login $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-login (states)
               let
-                  cursor $ :cursor states
-                  state $ or (:data states) initial-state
+                  cursor $ option:unwrap-or (get states :cursor) ([])
+                  state $ option:unwrap-or (get states :data) initial-state
                 div
                   {} $ :style (merge ui/flex ui/center)
                   div ({})
@@ -291,36 +338,44 @@
                       {} $ :style ({})
                       div ({})
                         input $ {} (:placeholder |Username)
-                          :value $ :username state
+                          :value $ option:unwrap-or (get state :username) |
                           :style ui/input
                           :on-input $ fn (e d!)
                             d! cursor $ assoc state :username
-                              str $ :value e
+                              option:unwrap-or (get e :value) |
                       =< nil 8
                       div ({})
                         input $ {} (:placeholder |Password)
-                          :value $ :password state
+                          :value $ option:unwrap-or (get state :password) |
                           :style ui/input
                           :on-input $ fn (e d!)
                             d! cursor $ assoc state :password
-                              str $ :value e
+                              option:unwrap-or (get e :value) |
                     =< nil 8
                     div
                       {} $ :style
                         {} $ :text-align :right
                       span $ {} (:inner-text "|Sign up")
                         :style $ merge ui/link
-                        :on-click $ on-submit (:username state) (:password state) true
+                        :on-click $ on-submit
+                          option:unwrap-or (get state :username) |
+                          option:unwrap-or (get state :password) |
+                          , true
                       =< 8 nil
                       span $ {} (:inner-text "|Log in")
                         :style $ merge ui/link
-                        :on-click $ on-submit (:username state) (:password state) false
+                        :on-click $ on-submit
+                          option:unwrap-or (get state :username) |
+                          option:unwrap-or (get state :password) |
+                          , false
           :examples $ []
-        |initial-state $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |initial-state $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def initial-state $ {} (:username |) (:password |)
           :examples $ []
-        |on-submit $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |on-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-submit (username password signup?)
               fn (e dispatch!)
@@ -328,7 +383,8 @@
                 js/localStorage.setItem (:storage-key config/site)
                   format-cirru-edn $ [] username password
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.login $ :require
             [] respo.core :refer $ [] defcomp <> div input button span
@@ -338,9 +394,9 @@
             [] app.schema :as schema
             [] app.style :as style
             [] app.config :as config
-    |app.comp.navigation $ %{} :FileEntry
+    |app.comp.navigation $ %{} 'FileEntry
       :defs $ {}
-        |comp-navigation $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-navigation $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-navigation (logged-in? count-members)
               div
@@ -354,7 +410,9 @@
                     :on-click $ fn (e d!)
                       d! :router/change $ {} (:name :home)
                     :style $ {} (:cursor :pointer)
-                  <> (:title config/site) nil
+                  <>
+                    option:unwrap-or (get config/site :title) nil
+                    , nil
                 div
                   {}
                     :style $ {} (:cursor |pointer)
@@ -364,7 +422,8 @@
                   =< 8 nil
                   <> count-members
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.navigation $ :require
             [] respo-ui.core :refer $ [] hsl
@@ -372,9 +431,9 @@
             [] respo.comp.space :refer $ [] =<
             [] respo.core :refer $ [] defcomp <> action-> span div
             [] app.config :as config
-    |app.comp.profile $ %{} :FileEntry
+    |app.comp.profile $ %{} 'FileEntry
       :defs $ {}
-        |comp-profile $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-profile $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-profile (user members)
               div
@@ -383,7 +442,8 @@
                 div
                   {} $ :style
                     {} (:font-family ui/font-fancy) (:font-size 32) (:font-weight 100)
-                  <> $ str "|Hello! " (:name user)
+                  <> $ str "|Hello! "
+                    option:unwrap-or (get user :name) |
                 =< nil 16
                 div
                   {} $ :style ui/row
@@ -417,7 +477,8 @@
                         js/localStorage.removeItem $ :storage-key config/site
                     <> "|Log out"
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.profile $ :require
             [] respo-ui.core :refer $ [] hsl
@@ -426,9 +487,9 @@
             [] respo.core :refer $ [] defcomp list-> <> span div button
             [] respo.comp.space :refer $ [] =<
             [] app.config :as config
-    |app.comp.timedrop $ %{} :FileEntry
+    |app.comp.timedrop $ %{} 'FileEntry
       :defs $ {}
-        |comp-timedrop $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-timedrop $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-timedrop (states timedrop)
               let
@@ -441,11 +502,15 @@
                       :padding "|8px 0"
                   span ({})
                     <>
-                      -> timedrop :time dayjs $ .!format "|MM:DD HH:mm:ss"
+                      unsafe-coerce
+                        ->
+                          option:unwrap-or (get timedrop :time) 0
+                          , dayjs $ .!format "|MM:DD HH:mm:ss"
+                        , 'String
                       {} (:font-size 20) (:font-family ui/font-fancy)
                     =< 8 nil
                     <>
-                      or (:text timedrop) |checked
+                      option:unwrap-or (get timedrop :text) |checked
                       {} (:font-size 12)
                         :color $ hsl 0 0 70
                   span
@@ -455,11 +520,12 @@
                         :cursor :pointer
                       :on-click $ fn (e d!)
                         .show remove-plugin d! $ fn ()
-                          d! :timedrop/remove-one $ :id timedrop
+                          d! :timedrop/remove-one $ option:unwrap-or (get timedrop :id) nil
                     comp-i :x 16 $ hsl 200 80 70
                   .render remove-plugin
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.timedrop $ :require
             [] respo-ui.core :refer $ [] hsl
@@ -473,58 +539,67 @@
             [] |dayjs :default dayjs
             [] feather.core :refer $ [] comp-icon comp-i
             [] respo-alerts.core :refer $ [] use-confirm
-    |app.config $ %{} :FileEntry
+    |app.config $ %{} 'FileEntry
       :defs $ {}
-        |dev? $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            def dev? $ = |dev (get-env |mode |release)
+            def dev? $ = |dev
+              option:unwrap-or (get-env |mode) |release
           :examples $ []
-        |site $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |site $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def site $ {} (:storage-key |timestops) (:storage-file |timedrops.cirru) (:port 11015) (:title |Timedrops) (:icon |http://cdn.tiye.me/logo/timedrops.png) (:server-folder |tiye.me:servers/timedrops) (:theme |#eeeeff)
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.config $ :require
-    |app.schema $ %{} :FileEntry
+    |app.schema $ %{} 'FileEntry
       :defs $ {}
-        |database $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |database $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def database $ {}
               :sessions $ do session ({})
               :users $ do user ({})
               :timedrops $ do timedrop ({})
           :examples $ []
-        |router $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |router $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def router $ {} (:name nil) (:title nil)
               :data $ {}
               :router nil
           :examples $ []
-        |session $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |session $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def session $ {} (:user-id nil) (:id nil) (:nickname nil)
               :router $ do router
                 {} (:name :home) (:data nil) (:router nil)
               :messages $ {}
           :examples $ []
-        |timedrop $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |timedrop $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def timedrop $ {} (:id nil) (:time nil) (:text nil)
           :examples $ []
-        |user $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |user $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def user $ {} (:name nil) (:id nil) (:nickname nil) (:avatar nil) (:password nil)
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote (ns app.schema)
-    |app.server $ %{} :FileEntry
+    |app.server $ %{} 'FileEntry
       :defs $ {}
-        |*client-caches $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*client-caches $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defatom *client-caches $ {}
           :examples $ []
-        |*initial-db $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |*initial-db $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defatom *initial-db $ if
               path-exists? $ w-log storage-file
@@ -532,15 +607,18 @@
                 merge schema/database $ parse-cirru-edn (read-file storage-file)
               do (println "|Found no data") schema/database
           :examples $ []
-        |*reader-reel $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |*reader-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *reader-reel @*reel)
           :examples $ []
-        |*reel $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defatom *reel $ merge reel-schema
               {} (:base @*initial-db) (:db @*initial-db)
           :examples $ []
-        |dispatch! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn dispatch! (op sid)
               let
@@ -550,21 +628,29 @@
                 if (= op :effect/persist) (persist-db!)
                   reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
           :examples $ []
-        |get-backup-path! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn get-backup-path! () $ let
                 now $ .extract (get-time!)
               join-path calcit-dirname |backups
-                str $ :month now
-                str (:day now) |-snapshot.cirru
+                str $ option:unwrap (get now :month)
+                str
+                  option:unwrap $ get now :day
+                  , |-snapshot.cirru
           :examples $ []
-        |main! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |main! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn main! ()
               println "|Running mode:" $ if config/dev? |dev |release
               let
-                  p? $ get-env |port nil
-                  port $ if (some? p?) (parse-float p?) (:port config/site)
+                  p? $ get-env |port
+                  port $ if-let (value p?)
+                    match (parse-float value)
+                      (:ok parsed) parsed
+                      (:err _) (:port config/site)
+                    :port config/site
                 run-server! port
                 println $ str "|Server started on port:" port
               do (; "|init it before doing multi-threading") (identity @*reader-reel)
@@ -572,21 +658,26 @@
               set-interval 600000 $ fn () (persist-db!)
               on-control-c on-exit!
           :examples $ []
-        |on-exit! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |on-exit! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-exit! () (persist-db!) (; println "|exit code is...") (quit! 0)
           :examples $ []
-        |persist-db! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |persist-db! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn persist-db! () $ let
                 file-content $ format-cirru-edn
-                  assoc (:db @*reel) :sessions $ {}
+                  assoc
+                    option:unwrap $ get @*reel :db
+                    , :sessions $ {}
                 storage-path storage-file
                 backup-path $ get-backup-path!
               check-write-file! storage-path file-content
               check-write-file! backup-path file-content
           :examples $ []
-        |reload! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn reload! () (println "|Code updated..")
               if (not config/dev?) (raise "|reloading only happens in dev mode")
@@ -594,14 +685,16 @@
               reset! *reel $ refresh-reel @*reel @*initial-db updater
               sync-clients! @*reader-reel
           :examples $ []
-        |render-loop! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |render-loop! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn render-loop! () $ when
               not $ identical? @*reader-reel @*reel
               reset! *reader-reel @*reel
               sync-clients! @*reader-reel
           :examples $ []
-        |run-server! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |run-server! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn run-server! (port)
               wss-serve! (&{} :port port)
@@ -620,20 +713,24 @@
                         dispatch! (:: :session/disconnect) sid
                     _ $ println "|unknown data:" data
           :examples $ []
-        |storage-file $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |storage-file $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def storage-file $ if (empty? calcit-dirname)
               str calcit-dirname $ :storage-file config/site
               str calcit-dirname |/ $ :storage-file config/site
           :examples $ []
-        |sync-clients! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |sync-clients! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn sync-clients! (reel)
               wss-each! $ fn (sid)
                 let
-                    db $ :db reel
-                    records $ :records reel
-                    session $ get-in db ([] :sessions sid)
+                    db $ option:unwrap (get reel :db)
+                    records $ option:unwrap (get reel :records)
+                    session $ option:unwrap-or
+                      get-in db $ [] :sessions sid
+                      {}
                     old-store $ or (get @*client-caches sid) nil
                     new-store $ twig-container db session records
                     changes $ diff-twig old-store new-store
@@ -645,7 +742,8 @@
                       wss-send! sid $ format-cirru-edn (:: :patch changes)
                       swap! *client-caches assoc sid new-store
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.server $ :require (app.schema :as schema)
             app.updater :refer $ updater
@@ -660,66 +758,80 @@
             calcit.std.time :refer $ set-interval
             calcit.std.date :refer $ Date get-time!
             calcit.std.path :refer $ join-path
-    |app.style $ %{} :FileEntry
+    |app.style $ %{} 'FileEntry
       :defs $ {}
-        |link $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |link $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def link $ {} (:text-decoration :underline) (:cursor :pointer)
               :color $ hsl 240 80 80
               :font-family ui/font-fancy
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.style $ :require
             [] respo-ui.core :refer $ [] hsl
             [] respo-ui.core :as ui
-    |app.twig.container $ %{} :FileEntry
+    |app.twig.container $ %{} 'FileEntry
       :defs $ {}
-        |twig-container $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |twig-container $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn twig-container (db session records)
               let
-                  logged-in? $ some? (:user-id session)
-                  router $ :router session
+                  user-id $ option:unwrap-or (get session :user-id) nil
+                  logged-in? $ some? user-id
+                  router $ option:unwrap-or (get session :router) ({})
+                  user-data $ option:unwrap-or
+                    get-in db $ [] :users user-id
+                    {}
+                  db-sessions $ option:unwrap-or (get db :sessions) ({})
+                  db-users $ option:unwrap-or (get db :users) ({})
                   base-data $ {} (:logged-in? logged-in?) (:session session)
                     :reel-length $ count records
                 merge base-data $ if logged-in?
                   {}
-                    :user $ twig-user
-                      get-in db $ [] :users (:user-id session)
+                    :user $ twig-user user-data
                     :router $ assoc router :data
-                      case-default (:name router) ({})
-                        :home $ :timedrops db
-                        :profile $ twig-members (:sessions db) (:users db)
-                    :count $ count (:sessions db)
+                      case-default
+                        option:unwrap-or (get router :name) nil
+                        {}
+                        :home $ option:unwrap-or (get db :timedrops) ({})
+                        :profile $ twig-members db-sessions db-users
+                    :count $ count db-sessions
                     :color $ rand-hex-color!
                   {}
           :examples $ []
-        |twig-members $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn twig-members (sessions users)
               -> sessions $ .map-kv
                 fn (k session)
-                  [] k $ get-in users
-                    [] (:user-id session) :name
+                  [] k $ option:unwrap-or
+                    get-in users $ []
+                      option:unwrap $ get session :user-id
+                      , :name
+                    , nil
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.twig.container $ :require
             [] app.twig.user :refer $ [] twig-user
             calcit.std.rand :refer $ rand-hex-color!
-    |app.twig.user $ %{} :FileEntry
+    |app.twig.user $ %{} 'FileEntry
       :defs $ {}
-        |twig-user $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |twig-user $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn twig-user (user) (dissoc user :password)
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.twig.user $ :require
-    |app.updater $ %{} :FileEntry
+    |app.updater $ %{} 'FileEntry
       :defs $ {}
-        |updater $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |updater $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn updater (db op sid op-id op-time)
               tag-match op
@@ -734,101 +846,115 @@
                 (:timedrop/remove-one op-data) (timedrop/remove-one db op-data sid op-id op-time)
                 _ $ do (eprintln "|Unknown op:" op) db
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.updater $ :require ([] app.updater.session :as session) ([] app.updater.user :as user) ([] app.updater.router :as router) ([] app.schema :as schema) ([] app.updater.timedrop :as timedrop)
             [] respo-message.updater :refer $ [] update-messages
-    |app.updater.router $ %{} :FileEntry
+    |app.updater.router $ %{} 'FileEntry
       :defs $ {}
-        |change $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |change $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn change (db op-data sid op-id op-time)
               assoc-in db ([] :sessions sid :router) op-data
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote (ns app.updater.router)
-    |app.updater.session $ %{} :FileEntry
+    |app.updater.session $ %{} 'FileEntry
       :defs $ {}
-        |connect $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |connect $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn connect (db sid op-id op-time)
               assoc-in db ([] :sessions sid)
                 merge schema/session $ {} (:id sid)
           :examples $ []
-        |disconnect $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |disconnect $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn disconnect (db sid op-id op-time)
               update db :sessions $ fn (session) (dissoc session sid)
           :examples $ []
-        |remove-message $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |remove-message $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn remove-message (db op-data sid op-id op-time)
               update-in db ([] :sessions sid :messages)
                 fn (messages)
-                  dissoc messages $ :id op-data
+                  dissoc (option:unwrap messages)
+                    option:unwrap $ get op-data :id
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.updater.session $ :require ([] app.schema :as schema)
-    |app.updater.timedrop $ %{} :FileEntry
+    |app.updater.timedrop $ %{} 'FileEntry
       :defs $ {}
-        |create-one $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |create-one $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn create-one (db op-data sid op-id op-time)
               assoc-in db ([] :timedrops op-id)
                 merge schema/timedrop op-data $ {} (:id op-id)
           :examples $ []
-        |remove-one $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |remove-one $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn remove-one (db op-data sid op-id op-time)
               update db :timedrops $ fn (timedrops) (dissoc timedrops op-data)
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.updater.timedrop $ :require ([] app.schema :as schema)
-    |app.updater.user $ %{} :FileEntry
+    |app.updater.user $ %{} 'FileEntry
       :defs $ {}
-        |log-in $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |log-in $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn log-in (db op-data sid op-id op-time)
               let-sugar
                     [] username password
                     , op-data
-                  maybe-user $ -> (:users db) (vals) (.to-list)
+                  users $ option:unwrap-or (get db :users) ({})
+                  maybe-user $ -> users vals .to-list
                     find $ fn (user)
-                      and $ = username (:name user)
+                      = username $ option:unwrap (get user :name)
                 update-in db ([] :sessions sid)
                   fn (session)
-                    if (some? maybe-user)
-                      if
-                        = (md5 password) (:password maybe-user)
-                        assoc session :user-id $ :id maybe-user
-                        update session :messages $ fn (messages)
-                          assoc messages op-id $ {} (:id op-id)
-                            :text $ str "|Wrong password for " username
-                      update session :messages $ fn (messages)
-                        assoc messages op-id $ {} (:id op-id)
-                          :text $ str "|No user named: " username
+                    let
+                        session-data $ option:unwrap session
+                      if-let (user maybe-user)
+                        if
+                          = (md5 password)
+                            option:unwrap $ get user :password
+                          assoc session-data :user-id $ option:unwrap (get user :id)
+                          update session-data :messages $ fn (messages)
+                            assoc (option:unwrap messages) op-id $ {} (:id op-id)
+                              :text $ str "|Wrong password for " username
+                        update session-data :messages $ fn (messages)
+                          assoc (option:unwrap messages) op-id $ {} (:id op-id)
+                            :text $ str "|No user named: " username
           :examples $ []
-        |log-out $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |log-out $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn log-out (db op-data sid op-id op-time)
               assoc-in db ([] :sessions sid :user-id) nil
           :examples $ []
-        |sign-up $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |sign-up $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn sign-up (db op-data sid op-id op-time)
               let-sugar
                     [] username password
                     , op-data
-                  maybe-user $ find
-                    vals $ :users db
+                  users $ option:unwrap-or (get db :users) ({})
+                  maybe-user $ find (vals users)
                     fn (user)
-                      = username $ :name user
-                if (some? maybe-user)
+                      = username $ option:unwrap (get user :name)
+                if-let (user maybe-user)
                   update-in db ([] :sessions sid :messages)
                     fn (messages)
-                      assoc messages op-id $ {} (:id op-id)
+                      assoc (option:unwrap messages) op-id $ {} (:id op-id)
                         :text $ str "|Name is taken: " username
                   -> db
                     assoc-in ([] :sessions sid :user-id) op-id
@@ -837,7 +963,8 @@
                         :password $ md5 password
                         :avatar nil
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.updater.user $ :require
             [] app.util :refer $ [] find-first
