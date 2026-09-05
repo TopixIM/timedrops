@@ -68,7 +68,7 @@
               add-watch *states :changes $ fn (states prev) (render-app!)
               on-page-touch $ fn ()
                 if
-                  nil? $ deref *store
+                  empty? $ deref *store
                   connect!
               println "|App started!"
           :examples $ []
