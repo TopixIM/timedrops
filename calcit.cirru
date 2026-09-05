@@ -51,7 +51,7 @@
                   option:unwrap-or (nth op 0) :unknown
                   , :states
                 js/console.log |Dispatch op
-              tag-match op
+              match op
                 (:states cursor s)
                   reset! *states $ update-states (deref *states) cursor s
                 (:effect/connect) (connect!)
@@ -81,7 +81,7 @@
         'on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-server-data (data)
-              tag-match data $
+              match data $
                 :patch changes
                 do
                   when config/dev? $ js/console.log |Changes changes
@@ -717,7 +717,7 @@
             defn run-server! (port)
               wss-serve! (&{} :port port)
                 fn (data)
-                  tag-match data
+                  match data
                     (:connect sid)
                       do
                         dispatch! (:: :session/connect) sid
@@ -854,7 +854,7 @@
         'updater $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn updater (db op sid op-id op-time)
-              tag-match op
+              match op
                 (:session/connect) (session/connect db sid op-id op-time)
                 (:session/disconnect) (session/disconnect db sid op-id op-time)
                 (:session/remove-message op-data) (session/remove-message db op-data sid op-id op-time)
