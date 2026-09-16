@@ -704,9 +704,7 @@
               let
                   db $
                     :db $ unsafe-coerce reel 'cumulo-reel.core/ReelState
-                  records $
-                        :records
-                      unsafe-coerce reel 'cumulo-reel.core/ReelState
+                  records $ :records $ unsafe-coerce reel 'cumulo-reel.core/ReelState
                   session $ option:unwrap-or
                     get-in db $ [] :sessions sid
                     {}
