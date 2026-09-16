@@ -5,11 +5,11 @@
   "main": "index.js",
   "packageManager": "yarn@4.12.0",
   "scripts": {
-    "compile-page": "cr js",
+    "compile-page": "calcit calcit.cirru --compat-types js",
     "release-page": "vite build --base=./",
-    "watch-page": "cr js -w",
-    "compile-server-ir": "cr --entry server ir",
-    "run-server": "cr --entry server"
+    "watch-page": "calcit calcit.cirru --compat-types js -w",
+    "compile-server-ir": "calcit calcit.cirru --compat-types --entry server ir",
+    "run-server": "calcit calcit.cirru --compat-types --entry server"
   },
   "repository": {
     "type": "git",
@@ -18,7 +18,7 @@
   "author": "jiyinyiyong",
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "0.13.77",
+    "@calcit/procs": "0.14.17",
     "dayjs": "^1.11.10",
     "shortid": "^2.2.16"
   },
