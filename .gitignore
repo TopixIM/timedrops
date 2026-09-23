@@ -16,3 +16,5 @@ storage.cirru
 backups/
 
 timedrops.cirru
+.pnp.cjs
+.pnp.loader.mjs
