@@ -3,11 +3,11 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {}
-    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :native) (:reload-fn 'app.client/reload!)
+    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :js) (:reload-fn 'app.client/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |lilac/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
       :type-slots $ {}
-    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!)
+    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!) (:target :native)
       :feature-policy $ {}
       :modules $ [] |lilac/ |recollect/ |memof/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |calcit.std/ |calcit-wss/
       :type-slots $ {}
@@ -19,16 +19,28 @@
             {} $ :states $ {}
               :cursor $ []
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref 'Dynamic
         '*store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defatom *store ({})
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
+        'UrlHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait UrlHost (:query 'app.client/UrlQueryHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object)
+          :schema $ :: 'Trait
+        'UrlQueryHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait UrlQueryHost
+            :host $ :: 'JsNullish 'String
+            :port $ :: 'JsNullish 'String
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object)
+          :schema $ :: 'Trait
         'connect! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn connect! ()
             let
-                url-obj $ unsafe-coerce (url-parse js/location.href true) 'JsObject
-                query $ unsafe-coerce (.-query url-obj) 'JsObject
+                url-obj $ unsafe-coerce (url-parse js/location.href true) ('app.client/UrlHost)
+                query $ unsafe-coerce (.-query url-obj) ('app.client/UrlQueryHost)
                 host-value $ .-host query
                 port-value $ .-port query
                 host $ if (js-present? host-value) (unsafe-coerce host-value 'String) (unsafe-coerce js/location.hostname 'String)
@@ -42,7 +54,9 @@
                     js/console.error "|Lost connection!"
                   :on-data on-server-data
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when
@@ -56,7 +70,9 @@
               (:effect/connect) (connect!)
               _ $ ws-send! op
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -69,20 +85,28 @@
               connect!
             println "|App started!"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'mount-target $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def mount-target (js/document.querySelector |.app)
+          :code $ quote $ defn mount-target () (js/document.querySelector |.app)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-server-data (data)
             match data $
               :patch changes
               do
                 when config/dev? $ js/console.log |Changes changes
-                reset! *store $ patch-twig (deref *store) changes
+                reset! *store $ unsafe-coerce
+                  patch-twig (deref *store)
+                    unsafe-coerce changes $ :: 'List 'recollect.schema/change-op
+                  :: 'Map 'Tag 'Dynamic
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
@@ -93,16 +117,18 @@
                 add-watch *states :changes $ fn (states prev) (render-app!)
                 println "|Code updated."
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target
+            render! (mount-target)
               comp-container
                 option:unwrap $ get (deref *states) :states
                 deref *store
               , dispatch!
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn simulate-login! ()
             let
@@ -110,9 +136,11 @@
               if (js-present? raw)
                 do (println "|Found storage.")
                   dispatch! $ :: :user/log-in $ parse-cirru-edn (unsafe-coerce raw 'String)
-                do $ println "|Found no storage."
+                println "|Found no storage."
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.client
           :require
@@ -165,7 +193,8 @@
                     option:unwrap-or (get store :reel-length) 0
                     {}
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Dynamic 'Dynamic
         'comp-offline $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-offline ()
             div
@@ -175,7 +204,9 @@
                 {} $ :height 0
               div $ {} $ :style
                 {}
-                  :background-image $ str "|url(" (:icon config/site) "|)"
+                  :background-image $ str "|url("
+                    option:unwrap-or (:icon config/site) |
+                    , "|)"
                   :width 128
                   :height 128
                   :background-size :contain
@@ -185,7 +216,8 @@
                   :on-click $ fn (e d!) (d! :effect/connect nil)
                 <> "|No connection..." $ {} (:font-family ui/font-fancy) (:font-size 24)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ []
         'comp-status-color $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-status-color (color)
             div $ {} $ :style
@@ -193,7 +225,8 @@
                   size 24
                 {} (:width size) (:height size) (:position :absolute) (:bottom 60) (:left 8) (:background-color color) (:border-radius |50%) (:opacity 0.6) (:pointer-events :none)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Dynamic
         'style-body $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-body
             {} $ :padding "|8px 16px"
@@ -217,8 +250,24 @@
             [] app.config :as config
             [] app.comp.dashboard :refer $ [] comp-dashboard
     'app.comp.dashboard $ %{} 'FileEntry
-      :defs $ {} $ 'comp-dashboard
-        %{} 'CodeEntry (:doc |)
+      :defs $ {}
+        'Focusable $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait Focusable
+            :focus $ :: 'Fn $ {}
+              :args $ []
+              :return 'Dynamic
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object)
+          :schema $ :: 'Trait
+        'as-timedrops $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn as-timedrops (value)
+            unsafe-coerce value $ :: 'Map 'Dynamic 'Dynamic
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Dynamic 'Dynamic
+        'comp-dashboard $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-dashboard (states timedrops)
             let
                 cursor $ option:unwrap-or (get states :cursor) ([])
@@ -231,18 +280,17 @@
                     :on-click $ fn (e d!)
                       d! cursor $ {} (:pop? true) (:draft |)
                         :time $ js/Date.now
-                      do
-                        flipped js/setTimeout 200 $ fn () $ let
-                            target $ js/document.querySelector |.input
-                          if (js-present? target)
-                            do
-                              .!focus $ unsafe-coerce target 'JsObject
-                              , &unit
-                            do (js/console.warn |Unknown target) &unit
-                        , &unit
+                      flipped js/setTimeout 200 $ fn () $ let
+                          target $ js/document.querySelector |.input
+                        if (js-present? target)
+                          do
+                            .!focus $ unsafe-coerce target $ 'app.comp.dashboard/Focusable
+                            , &unit
+                          do (js/console.warn |Unknown target) &unit
+                      , &unit
                 =< nil 16
                 list-> ({})
-                  -> timedrops (.to-list)
+                  -> (as-timedrops timedrops) (.to-list)
                     .sort-by $ fn (pair)
                       negate $ option:unwrap-or
                         get
@@ -287,7 +335,9 @@
                   fn (d!)
                     d! cursor $ assoc state :pop? false
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.dashboard
           :require
@@ -307,7 +357,8 @@
           :code $ quote $ defcomp comp-title (title)
             <> title $ {} (:font-family ui/font-fancy) (:font-size 20)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'String
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.kit
           :require
@@ -359,7 +410,8 @@
                         option:unwrap-or (get state :password) |
                         , false
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Dynamic
         'initial-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def initial-state
             {} (:username |) (:password |)
@@ -372,7 +424,9 @@
               js/localStorage.setItem (:storage-key config/site)
                 format-cirru-edn $ [] username password
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'String 'String 'Bool
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.login
           :require
@@ -392,7 +446,7 @@
                 {} (:height 48) (:justify-content :space-between) (:padding "|0 16px") (:font-size 16)
                   :border-bottom $ str "|1px solid " $ hsl 0 0 0
                   :font-family ui/font-fancy
-                  :background-color $ :theme config/site
+                  :background-color $ option:unwrap-or (:theme config/site) |#eeeeff
               div
                 {}
                   :on-click $ fn (e d!)
@@ -408,9 +462,10 @@
                     d! :router/change $ {} $ :name :profile
                 <> $ if logged-in? |Me |Guest
                 =< 8 nil
-                <> count-members
+                <> $ str count-members
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Bool 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.navigation
           :require
@@ -420,8 +475,16 @@
             [] respo.core :refer $ [] defcomp <> action-> span div
             [] app.config :as config
     'app.comp.profile $ %{} 'FileEntry
-      :defs $ {} $ 'comp-profile
-        %{} 'CodeEntry (:doc |)
+      :defs $ {}
+        'as-members $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn as-members (value)
+            unsafe-coerce value $ :: 'Map 'Dynamic 'String
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Dynamic 'String
+        'comp-profile $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-profile (user members)
             div
               {} $ :style $ merge ui/flex
@@ -436,7 +499,7 @@
                 =< 8 nil
                 list->
                   {} $ :style ui/row
-                  -> members (.to-list)
+                  -> (as-members members) (.to-list)
                     .map-pair $ fn (k username)
                       [] k $ div
                         {} $ :style $ {} (:padding "|0 8px")
@@ -450,21 +513,21 @@
                   {}
                     :style $ merge ui/button
                     :on-click $ fn (e d!)
-                      do
-                        js/location.replace $ str js/location.origin |?time= $ js/Date.now
-                        , &unit
+                      js/location.replace $ str js/location.origin |?time= $ js/Date.now
+                      , &unit
                   <> |Refresh
                 =< 8 nil
                 button
                   {}
                     :style $ merge ui/button $ {} (:color :red) (:border-color :red)
                     :on-click $ fn (e dispatch! mutate!) (dispatch! :user/log-out nil)
-                      do
-                        js/localStorage.removeItem $ :storage-key config/site
-                        , &unit
+                      js/localStorage.removeItem $ :storage-key config/site
+                      , &unit
                   <> "|Log out"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.profile
           :require
@@ -510,7 +573,9 @@
                   comp-i :x 16 $ hsl 200 80 70
                 .render remove-plugin
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.timedrop
           :require
@@ -585,32 +650,42 @@
           :code $ quote $ defatom *initial-db
             if
               path-exists? $ w-log storage-file
-              do (println "|Found local EDN data")
-                merge schema/database $ parse-cirru-edn $ read-file storage-file
-              do (println "|Found no data") schema/database
+              do (println |Found_local_EDN_data)
+                merge
+                  assert-type schema/database $ :: 'Map 'Tag 'Dynamic
+                  parse-database $ read-file storage-file
+              do (println |Found_no_data) schema/database
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
         '*reader-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defatom *reader-reel @*reel
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref 'cumulo-reel.core/ReelState
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defatom *reel
             %{} cumulo-reel.core/ReelState (:base @*initial-db) (:db @*initial-db)
               :records $ []
               :merged? false
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref 'cumulo-reel.core/ReelState
+        'as-change-list $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn as-change-list (value)
+            unsafe-coerce value $ :: 'List 'recollect.schema/change-op
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'List 'recollect.schema/change-op
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op sid)
             let
                 op-id $ generate-id!
                 op-time $ calcit.std.date/get-timestamp $ get-time!
               if config/dev? $ println |Dispatch! (str op) sid
-              if (= op :effect/persist) (persist-db!)
-                reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
+              reset! *reel $ reel-reducer (deref *reel) updater op sid op-id op-time config/dev?
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'Enum 'Number
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-backup-path! ()
             let
@@ -621,29 +696,52 @@
                   option:unwrap $ get now :day
                   , |-snapshot.cirru
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'String)
+            :args $ []
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
             let
                 p? $ get-env |port
-                port $ if-let (value p?)
-                  match (parse-float value)
-                    (:ok parsed) parsed
-                    (:err _) (:port config/site)
-                  :port config/site
+                port $ option:fold p?
+                  fn () $ option:unwrap-or
+                    assert-type (:port config/site) (:: 'Option 'Number)
+                    , 11011
+                  fn (raw)
+                    result:unwrap-or (parse-float raw)
+                      option:unwrap-or
+                        assert-type (:port config/site) (:: 'Option 'Number)
+                        , 11011
               run-server! port
               println $ str "|Server started on port:" port
-            do (; "|init it before doing multi-threading") (identity @*reader-reel)
+            ; "|init it before doing multi-threading"
+            identity @*reader-reel
             set-interval 200 $ fn () $ render-loop!
             set-interval 600000 $ fn () $ persist-db!
             on-control-c on-exit!
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'on-exit! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-exit! () (persist-db!) (; println "|exit code is...") (quit! 0)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+        'parse-database $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn parse-database (content)
+            unsafe-coerce (parse-cirru-edn content) (:: 'Map 'Tag 'Dynamic)
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'String
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
+        'parse-op $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn parse-op (content)
+            unsafe-coerce (parse-cirru-edn content) 'Enum
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Enum)
+            :args $ [] 'String
+            :features $ #{} :js-ffi
         'persist-db! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-db! ()
             let
@@ -655,15 +753,18 @@
               check-write-file! storage-path file-content
               check-write-file! backup-path file-content
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn reload! () (println "|Code updated..")
-            if (not config/dev?) (raise "|reloading only happens in dev mode")
+          :code $ quote $ defn reload! () (println |Code_updated)
+            if (not config/dev?) (raise |reloading_only_happens_in_dev_mode)
             clear-twig-caches!
-            reset! *reel $ refresh-reel @*reel @*initial-db updater
-            sync-clients! @*reader-reel
+            reset! *reader-reel $ deref *reel
+            sync-clients! $ deref *reader-reel
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'render-loop! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-loop! ()
             when
@@ -671,7 +772,8 @@
               reset! *reader-reel @*reel
               sync-clients! @*reader-reel
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'run-server! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn run-server! (port)
             wss-serve! (&{} :port port)
@@ -683,19 +785,20 @@
                       println "|New client."
                   (:message sid msg)
                     let
-                        action $ parse-cirru-edn msg
+                        action $ parse-op msg
                       dispatch! action sid
                   (:disconnect sid)
                     do (println "|Client closed!")
                       dispatch! (:: :session/disconnect) sid
                   _ $ println "|unknown data:" data
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'Number
         'storage-file $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def storage-file
             if (empty? calcit-dirname)
-              str calcit-dirname $ :storage-file config/site
-              str calcit-dirname |/ $ :storage-file config/site
+              option:unwrap-or (:storage-file config/site) |storage.cirru
+              str calcit-dirname |/ $ option:unwrap-or (:storage-file config/site) |storage.cirru
           :examples $ []
           :schema $ :: 'Dynamic
         'sync-clients! $ %{} 'CodeEntry (:doc |)
@@ -708,17 +811,22 @@
                   session $ option:unwrap-or
                     get-in db $ [] :sessions sid
                     {}
-                  old-store $ or (get @*client-caches sid) nil
+                  old-store $ option:unwrap-or
+                    get (deref *client-caches) sid
+                    , nil
                   new-store $ twig-container db session records
-                  changes $ diff-twig old-store new-store $ {} (:key :id)
+                  changes $ as-change-list $ diff-twig old-store new-store
+                    {} $ :key :id
                 ; when config/dev? $ println "|Changes for" sid |: changes $ count records
                 if
-                  not= changes $ []
+                  not $ empty? changes
                   do
                     wss-send! sid $ format-cirru-edn $ :: :patch changes
                     swap! *client-caches assoc sid new-store
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'cumulo-reel.core/ReelState
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.server
           :require (app.schema :as schema)
@@ -750,6 +858,14 @@
             [] respo-ui.core :as ui
     'app.twig.container $ %{} 'FileEntry
       :defs $ {}
+        'as-tag-map $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn as-tag-map (value)
+            unsafe-coerce value $ :: 'Map 'Tag 'Dynamic
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'twig-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn twig-container (db session records)
             let
@@ -763,7 +879,7 @@
                 db-users $ option:unwrap-or (get db :users) ({})
                 base-data $ {} (:logged-in? logged-in?) (:session session)
                   :reel-length $ count records
-              merge base-data $ if logged-in?
+              merge base-data $ as-tag-map $ if logged-in?
                 {}
                   :user $ twig-user user-data
                   :router $ assoc router :data $ case-default
@@ -775,7 +891,9 @@
                   :color $ rand-hex-color!
                 {}
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) (:: 'Map 'Tag 'Dynamic) (:: 'List 'Dynamic)
+            :return $ :: 'Map 'Tag 'Dynamic
         'twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn twig-members (sessions users)
             -> sessions $ .map-kv $ fn (k session)
@@ -785,7 +903,9 @@
                   , :name
                 , nil
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Dynamic 'Dynamic) (:: 'Map 'Dynamic 'Dynamic)
+            :return $ :: 'Map 'Dynamic 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.twig.container
           :require
@@ -796,7 +916,9 @@
         %{} 'CodeEntry (:doc |)
           :code $ quote $ defn twig-user (user) (dissoc user :password)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.twig.user (:require)
     'app.updater $ %{} 'FileEntry
@@ -815,7 +937,9 @@
               (:timedrop/remove-one op-data) (timedrop/remove-one db op-data sid op-id op-time)
               _ $ do (eprintln "|Unknown op:" op) db
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Enum 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require ([] app.updater.session :as session) ([] app.updater.user :as user) ([] app.updater.router :as router) ([] app.schema :as schema) ([] app.updater.timedrop :as timedrop)
@@ -826,7 +950,9 @@
           :code $ quote $ defn change (db op-data sid op-id op-time)
             assoc-in db ([] :sessions sid :router) op-data
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.router
     'app.updater.session $ %{} 'FileEntry
@@ -836,12 +962,16 @@
             assoc-in db ([] :sessions sid)
               merge schema/session $ {} $ :id sid
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
         'disconnect $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn disconnect (db sid op-id op-time)
             update db :sessions $ fn (session) (dissoc session sid)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
         'remove-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn remove-message (db op-data sid op-id op-time)
             update-in db ([] :sessions sid :messages)
@@ -849,34 +979,65 @@
                 dissoc (option:unwrap messages)
                   option:unwrap $ get op-data :id
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.session
           :require $ [] app.schema :as schema
     'app.updater.timedrop $ %{} 'FileEntry
       :defs $ {}
+        'as-tag-map $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn as-tag-map (value)
+            unsafe-coerce value $ :: 'Map 'Tag 'Dynamic
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'create-one $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn create-one (db op-data sid op-id op-time)
             assoc-in db ([] :timedrops op-id)
-              merge schema/timedrop op-data $ {} $ :id op-id
+              merge (as-tag-map schema/timedrop) (as-tag-map op-data)
+                as-tag-map $ {} $ :id op-id
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
         'remove-one $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn remove-one (db op-data sid op-id op-time)
             update db :timedrops $ fn (timedrops) (dissoc timedrops op-data)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.timedrop
           :require $ [] app.schema :as schema
     'app.updater.user $ %{} 'FileEntry
       :defs $ {}
+        'as-database $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn as-database (value)
+            unsafe-coerce value $ :: 'Map 'Tag 'Dynamic
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
+        'as-map $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn as-map (value)
+            unsafe-coerce value $ :: 'Map 'Dynamic $ :: 'Map 'Tag 'Dynamic
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Dynamic $ :: 'Map 'Tag 'Dynamic
         'log-in $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn log-in (db op-data sid op-id op-time)
             let-sugar
                   [] username password
                   , op-data
-                users $ option:unwrap-or (get db :users) ({})
+                users $ as-map $ option:unwrap-or (get db :users) ({})
                 maybe-user $ -> users vals .to-list $ find
                   fn (user)
                     = username $ option:unwrap $ get user :name
@@ -896,18 +1057,22 @@
                         assoc (option:unwrap messages) op-id $ {} (:id op-id)
                           :text $ str "|No user named: " username
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
         'log-out $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn log-out (db op-data sid op-id op-time)
             assoc-in db ([] :sessions sid :user-id) nil
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
         'sign-up $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sign-up (db op-data sid op-id op-time)
-            let-sugar
+            as-database $ let-sugar
                   [] username password
                   , op-data
-                users $ option:unwrap-or (get db :users) ({})
+                users $ as-map $ option:unwrap-or (get db :users) ({})
                 maybe-user $ find
                   -> users vals $ .to-list
                   fn (user)
@@ -924,7 +1089,9 @@
                       :password $ md5 password
                       :avatar nil
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.user
           :require
