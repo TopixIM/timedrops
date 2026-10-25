@@ -18,11 +18,10 @@ if(mode==='before'){
  for(const[i,s]of p.sites.entries())if(s.region==='code'){
   writeFileSync('acceptance/before-subtree-'+i+'.json',run('calcit',['tree','show',s.definition,'--path','@'+s.path,'--format','json']));
   const args=['query','type-at',s.definition,'--path','@'+s.path+'.1','--format','json'];if(s.definition.startsWith('app.server/')||s.definition.startsWith('app.twig.'))args.unshift('--entry','server');
-  const t=JSON.parse(run('calcit',args));assert.deepEqual(t.diagnostics||[],[]);const m=t.data.static_methods.find(m=>m.name===replacements[s.head]);assert.equal(m.status,'proven');
+  const t=JSON.parse(run('calcit',args));writeFileSync('acceptance/type-'+i+'.json',JSON.stringify(t));assert.deepEqual(t.diagnostics||[],[]);const m=t.data.static_methods.find(m=>m.name===replacements[s.head]);assert.equal(m.status,'proven');
   if(s.head==='count'){assert.ok(['calcit.core/&list:count','calcit.core/&map:count'].includes(m.definition));assert.equal(m.call_types.returns,"'Number");assert.deepEqual(m.parameter_types,[]);assert.equal(m.rest_type,null);}
   if(s.head==='foldl'){assert.equal(m.definition,'calcit.core/foldl');assert.match(t.data.inferred_type,/'List/);}
-  if(s.head==='option:unwrap'){assert.match(t.data.inferred_type,/'Option/);assert.ok(m.definition.startsWith('calcit.core/'));}
-  writeFileSync('acceptance/type-'+i+'.json',JSON.stringify(t));
+  if(s.head==='option:unwrap'){assert.equal(t.data.inferred_type,":: 'calcit.core/Option 'Number");assert.equal(m.definition,'calcit.core/option:unwrap');assert.equal(m.call_types.returns,"'Number");}
  }
  writeFileSync('acceptance/before-source.json',JSON.stringify(views()));
 }else if(mode==='apply'){
