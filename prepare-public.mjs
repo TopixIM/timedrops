@@ -31,7 +31,7 @@ if(mode==='before'){
 }else if(mode==='after'){
  assert.deepEqual(views(),norm(expected));assert.equal(blob(),readFileSync('acceptance/modified-blob.txt','utf8'));guard();writeFileSync('acceptance/after-source.json',JSON.stringify(views()));
 }else if(mode==='gates'){
- assert.ok(['before','after'].includes(phase));const log=(name,args)=>writeFileSync('acceptance/'+phase+'-'+name,run('calcit',args));
+ assert.ok(['before','after'].includes(phase));const log=(name,args)=>{const file='acceptance/'+phase+'-'+name;try{writeFileSync(file,run('calcit',args));}catch(e){writeFileSync(file,e.stdout||'');writeFileSync(file+'.stderr',e.stderr||'');throw Error('Required Calcit gate failed: '+file+' (exit '+e.status+'); full stdout/stderr retained in diagnostics');}};
  const source=blob();run('calcit',['edit','format']);assert.equal(blob(),source);
  log('strict.json',['fix','--workflow','strict','--verify','--format','json']);const s=JSON.parse(readFileSync('acceptance/'+phase+'-strict.json'));assert.equal(s.data.workflow.status,'passed');assert.deepEqual(s.diagnostics,[]);
  log('browser-entry.log',['--check-only']);log('server-entry.log',['--entry','server','--check-only']);
