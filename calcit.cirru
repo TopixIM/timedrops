@@ -320,7 +320,7 @@
         'comp-dashboard $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-dashboard (states timedrops)
             let
-                cursor $ option:unwrap-or (get states :cursor) ([])
+                cursor $ .unwrap-or (get states :cursor) ([])
                 state $ read-state states
               div
                 {} $ :style $ {} (:padding 16)
@@ -438,7 +438,7 @@
         'comp-login $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-login (states)
             let
-                cursor $ option:unwrap-or (get states :cursor) ([])
+                cursor $ .unwrap-or (get states :cursor) ([])
                 state $ match (get states :data)
                   (:none) initial-state
                   (:some raw)
@@ -677,7 +677,7 @@
       :defs $ {}
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
-            = |dev $ option:unwrap-or (get-env |mode) |release
+            = |dev $ .unwrap-or (get-env |mode) |release
           :examples $ []
           :schema $ :: 'Dynamic
         'site $ %{} 'CodeEntry (:doc |)
