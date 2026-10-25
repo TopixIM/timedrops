@@ -5,9 +5,11 @@
 
 ## 升级与数据
 
-工具链成对固定为已发布的 Calcit / `@calcit/procs` **0.30.1-alpha.5** 候选，
-不是正式 0.30.1。模块使用 `deps.cirru` 中的精确正式 tag。
-升级需要前后端一起切换，旧页面随后刷新；新前端不兼容仍发送旧 Map 投影的服务端。
+本轮将 Calcit / `@calcit/procs` 成对固定为正式 **0.30.1**，并同步精确正式模块图：
+Cumulo Reel 0.0.61、Recollect 0.0.67、WS-EDN 0.0.47、Respo 0.16.124／UI 0.8.0／JS FFI 0.2.5。
+三处旧 Option 调用改为 `.unwrap-or`，默认值、schema 和原测试不变；本轮不再次改变存档、wire、登录 key 或应用模型。
+移除仅供旧 alpha runtime 使用的 npm 安装豁免，不降低 Yarn 默认新包隔离策略。
+此前具名模型升级仍需要前后端一起切换，旧页面随后刷新；新前端不兼容仍发送旧 Map 投影的服务端。
 服务端须事先准备配对 CLI 和声明依赖，原部署工作流只复制文件，不安装依赖或重启进程。
 
 数据库使用具体 Db、Session、User 和 Timedrop；缺失用户和视图使用 Option。
@@ -44,6 +46,11 @@ yarn release-page
 CI 另按 browser/native 分区检查全部应用定义，复用发布版共享 runner 在 native/JS
 回放同一组可移植数据契约；服务端持久化和认证测试在 native 执行。
 不新增项目专用检查脚本或并行启动依赖。遵守用户对本地 Caps 的额外限制。
+
+正式 0.30.1 的官方 Linux 准备任务已通过完整 strict、两侧入口／namespace 检查、原 native 8/8、
+共享 native／JS 各 4/4 和构建；另用真实生成的 Dayjs 适配器核对两种原日期格式，连同原冒号格式保留。
+临时准备工作流、迁移脚本和日期探针不进入项目；未重跑真实服务／浏览器账户保存／SIGINT／冷启动验收，
+此前 alpha 候选的服务记录不能冒充本轮端到端结果。账户存储及生产 rollout 仍按原待确认边界处理。
 
 `yarn watch-page` 显式监听前端编译；另行运行 Vite。
 隔离验收应将 Snapshot、manifest 和模块视图准备到临时目录，设置
