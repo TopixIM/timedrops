@@ -71,6 +71,17 @@ jobs:
         run: |
           set -euo pipefail
           yarn compile-page
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import dayjs from 'dayjs';
+          import { format_time } from './js-out/app.browser.mjs';
+          for (const time of [0, Date.now()]) {
+            for (const pattern of ['MM-DD HH:mm:ss', 'MM:DD HH:mm:ss']) {
+              assert.equal(format_time(time, pattern), dayjs(time).format(pattern));
+            }
+          }
+          console.log('Original two date formats retain the real Dayjs host contract.');
+          JS
           yarn release-page
           node prepare-source.mjs verify
       - uses: actions/upload-artifact@v7.0.2
