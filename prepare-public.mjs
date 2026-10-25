@@ -10,6 +10,9 @@ const p=JSON.parse(readFileSync('reviewed-source.json')),mode=process.argv[2],ph
 const replacements={count:'.len','option:unwrap':'.unwrap',foldl:'.foldl'},expected=structuredClone(p.before);
 for(const s of p.sites){const d=expected.defs.find(d=>d.id===s.definition);let n=s.region==='test'?d.tests[s.testIndex].code:d.code;for(const i of s.path.split('.').map(Number))n=n[i];assert.deepEqual(n,s.before);n[0]=replacements[s.head];}
 assert.equal(p.sites.length,7);
+const exitCallback=expected.defs.find(d=>d.id==='app.server/on-exit!').code[3][3];
+assert.deepEqual(exitCallback,['fn',['acc','task'],['.cancel!','task']]);
+exitCallback.splice(2,0,['hint-fn',['{}',[':args',['[]',"'Unit","'calcit.core/FfiTask"]],[':return',"'Unit"]]]);
 const views=()=>{const namespaces=[],defs=[];for(const ns of q('ns').namespaces){const info=q('ns',ns);namespaces.push(info);const names=run('calcit',['query','defs',ns]).split('\n').filter(l=>/^  \S/.test(l)).map(l=>l.trim().split(' ')[0]);assert.equal(names.length,info.definition_count);for(const n of names)defs.push(q('def',ns+'/'+n));}return {config:q('config'),namespaces,defs};};
 const blob=()=>run('git',['hash-object','calcit.cirru']).trim(),guard=()=>{for(const[f,h]of Object.entries(p.ordinaryBlobs))assert.equal(run('git',['hash-object',f]).trim(),h,f);};
 if(mode==='before'){
@@ -27,6 +30,7 @@ if(mode==='before'){
 }else if(mode==='apply'){
  assert.equal(blob(),p.blob);assert.deepEqual(views(),norm(p.before));guard();const operations=p.sites.filter(s=>s.region==='code').map(s=>['tree','replace',s.definition,'--path','@'+s.path+'.0','--input-format','json-ast','--code',JSON.stringify(replacements[s.head])]);
  for(const s of p.sites.filter(s=>s.region==='test')){const t=expected.defs.find(d=>d.id===s.definition).tests[s.testIndex];assert.equal(t.name,s.testName);const op=['edit','add-test',s.definition,t.name,'--overwrite','--input-format','json-ast','--code',JSON.stringify(t.code)];if(t.tags.length)op.push('--tags',t.tags.join(','));operations.push(op);}
+ operations.push(['tree','replace','app.server/on-exit!','--path','@3.3','--input-format','json-ast','--code',JSON.stringify(exitCallback)]);
  writeFileSync('acceptance/operations.json',JSON.stringify(operations));const args=['edit','transaction','--file','acceptance/operations.json','--format','json'];const preview=JSON.parse(run('calcit',[...args,'--dry-run']));assert.ok(preview.scoped_revision);assert.equal(blob(),p.blob);writeFileSync('acceptance/preview.json',JSON.stringify(preview));writeFileSync('acceptance/applied.json',run('calcit',[...args,'--expect-revision',preview.scoped_revision]));writeFileSync('acceptance/modified-blob.txt',blob());assert.deepEqual(views(),norm(expected));guard();writeFileSync('acceptance/expected-source.json',JSON.stringify(norm(expected)));
 }else if(mode==='after'){
  assert.deepEqual(views(),norm(expected));assert.equal(blob(),readFileSync('acceptance/modified-blob.txt','utf8'));guard();writeFileSync('acceptance/after-source.json',JSON.stringify(views()));
