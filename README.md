@@ -12,6 +12,13 @@ Cumulo Reel 0.0.61、Recollect 0.0.67、WS-EDN 0.0.47、Respo 0.16.124／UI 0.8.
 此前具名模型升级仍需要前后端一起切换，旧页面随后刷新；新前端不兼容仍发送旧 Map 投影的服务端。
 服务端须事先准备配对 CLI 和声明依赖，原部署工作流只复制文件，不安装依赖或重启进程。
 
+后续公开方法迁移保留计数、备份路径和清理顺序：三处生产计数及原登录测试的一处计数使用 `.len`，
+两处日期 Option 读取使用 `.unwrap`，退出时的任务列表使用 `.foldl`。
+正式 0.30.1 存在 [方法 fold 回调推断差异 #2341](https://github.com/calcit-lang/calcit/issues/2341)，
+因此为原取消回调声明实际 `Unit × FfiTask → Unit` 合同；回调 body 不改，不加强转或返回值覆盖。
+这不改变数据库、wire、账户 key、页面 `hud!` 或原生产路径，也不声称重新验收真实 SIGINT／冷启动。
+原规范格式门禁要求 formatter 前后源码 Git blob 一致，失败时不再输出 Snapshot 文本。
+
 数据库使用具体 Db、Session、User 和 Timedrop；缺失用户和视图使用 Option。
 时间记录的 ID、时间和文本分别为 String、Number、String，原有增删与路由交互保留。
 旧 `timedrops.cirru` Map 存档与新具名存档均先解码；不合法字段会阻止启动，
