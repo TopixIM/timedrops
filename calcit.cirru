@@ -50,11 +50,11 @@
           :require (|dayjs :default dayjs) (js-ffi.browser :as browser) (js-ffi.shared :as host)
     'app.client $ %{} 'FileEntry
       :defs $ {}
-        '*states $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *states
-            {} $ :cursor $ []
+        '*local-state $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defref *local-state
+            schema/LocalState :login (schema/LoginState :username | :password |) :dashboard (schema/DashboardState :pop? false :draft | :time 0) :confirming $ #{}
           :examples $ []
-          :schema $ quote $ Ref Dynamic
+          :schema $ quote $ Ref app.schema/LocalState
         '*store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *store (Option :none)
           :examples $ []
@@ -91,9 +91,15 @@
           :code $ quote $ defn dispatch! (action)
             match action
               (app.schema/LocalOp state-op)
-                match state-op $
-                  :states cursor state
-                  reset! *states $ update-state-tree @*states cursor state
+                match state-op
+                  (:login state)
+                    reset! *local-state $ assoc @*local-state :login state
+                  (:dashboard state)
+                    reset! *local-state $ assoc @*local-state :dashboard state
+                  (:confirm-remove id show?)
+                    let
+                        confirming $ :confirming @*local-state
+                      reset! *local-state $ assoc @*local-state :confirming $ if show? (.include confirming id) (.exclude confirming id)
               (app.schema/Op op)
                 match op
                   (:effect/connect) (connect!)
@@ -107,7 +113,7 @@
             render-app!
             connect!
             add-watch! *store :changes $ fn (store previous) (render-app!)
-            add-watch! *states :changes $ fn (states previous) (render-app!)
+            add-watch! *local-state :changes $ fn (states previous) (render-app!)
             on-page-touch $ fn () $ match @*store
               (:none) (connect!)
               (:some store) &unit
@@ -149,9 +155,9 @@
             if
               or (js-present? client-errors) (js-present? server-errors)
               hud! |error $ str client-errors &newline server-errors
-              do (hud! |inactive nil) (remove-watch! *store :changes) (remove-watch! *states :changes) (clear-cache!) (render-app!)
+              do (hud! |inactive nil) (remove-watch! *store :changes) (remove-watch! *local-state :changes) (clear-cache!) (render-app!)
                 add-watch! *store :changes $ fn (store previous) (render-app!)
-                add-watch! *states :changes $ fn (states previous) (render-app!)
+                add-watch! *local-state :changes $ fn (states previous) (render-app!)
                 println |Code-updated
             , &unit
           :examples $ []
@@ -159,7 +165,7 @@
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render-with! (mount-target)
-              fn () $ comp-container @*states @*store
+              fn () $ comp-container @*local-state @*store
               , dispatch!
           :examples $ []
           :schema $ quote $ Fn (-> Unit)
@@ -182,7 +188,6 @@
           :require
             respo.core :refer $ render-with! clear-cache!
             respo.ffi.browser :as dom
-            respo.cursor :refer $ update-state-tree
             app.comp.container :refer $ comp-container
             app.schema :as schema
             app.config :as config
@@ -198,7 +203,7 @@
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
         'comp-container $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-container (states maybe-store)
+          :code $ quote $ defcomp comp-container (local-state maybe-store)
             match maybe-store
               (:none) (comp-offline)
               (:some store)
@@ -207,13 +212,13 @@
                   comp-navigation (:logged-in? store) (:count store)
                   match (:user store)
                     (:none)
-                      comp-login $ >> states :login
+                      comp-login $ :login local-state
                     (:some user)
                       match (:router store)
                         (:none) (<> |Missing-route)
                         (:some router)
                           match (:name router)
-                            :home $ comp-dashboard (>> states :dashboard) (:timedrops router)
+                            :home $ comp-dashboard (:dashboard local-state) (:confirming local-state) (:timedrops router)
                             :profile $ comp-profile user $ :members router
                             _ $ <> $ str router
                   comp-status-color $ :color store
@@ -239,7 +244,7 @@
                     Option :some $ comp-dev-reel $ :reel-length store
                     Option :none
           :examples $ []
-          :schema $ quote $ Fn Dynamic (Option app.schema/Store) (-> respo.schema/Component)
+          :schema $ quote $ Fn app.schema/LocalState (Option app.schema/Store) (-> respo.schema/Component)
         'comp-dev-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-dev-reel (size)
             div
@@ -310,7 +315,7 @@
           :require
             hsl.core :refer $ hsl
             respo-ui.core :as ui
-            respo.core :refer $ defcomp <> >> div span action-> cursor-> button
+            respo.core :refer $ defcomp <> div span action-> cursor-> button
             respo.comp.inspect :refer $ comp-inspect
             respo.comp.space :refer $ =<
             app.comp.navigation :refer $ comp-navigation
@@ -323,94 +328,76 @@
             app.config :as config
             app.comp.dashboard :refer $ comp-dashboard
     'app.comp.dashboard $ %{} 'FileEntry
-      :defs $ {}
-        'comp-dashboard $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-dashboard (states timedrops)
-            let
-                cursor $ decode-map-as
-                  .unwrap-or (get states :cursor) ([])
-                  List respo.schema/CoordKey
-                state $ read-state states
-              div
-                {} $ :style $ {} (:padding 16)
-                div ({})
-                  button $ {} (:style ui/button) (:inner-text |Drop)
-                    :on-click $ fn (e d!)
-                      hint-fn $ Fn respo.schema/RespoEvent
-                        Fn app.schema/ClientOp $ -> Unit
-                        -> Unit
-                      d! $ app.schema/LocalOp :states cursor $ schema/DashboardState :pop? true :draft | :time (host/now-ms)
-                      browser/set-timeout!
-                        fn () $ adapter/focus-input!
-                        , 200
-                      , &unit
-                =< nil 16
-                list-> ({})
-                  ->
-                    map-list-kv timedrops $ fn (id item) item
-                    sort $ fn (a b)
-                      - (:time b) (:time a)
-                    map $ fn (timedrop)
-                      [] (:id timedrop)
-                        comp-timedrop
-                          >> states $ :id timedrop
-                          , timedrop
-                comp-modal
-                  {} (:title |Demo)
-                    :style $ {} $ :width 400
-                    :container-style $ {}
-                    :render $ fn (on-close)
+      :defs $ {} $ 'comp-dashboard
+        %{} 'CodeEntry (:doc |)
+          :code $ quote $ defcomp comp-dashboard (state confirming timedrops)
+            div
+              {} $ :style $ {} (:padding 16)
+              div ({})
+                button $ {} (:style ui/button) (:inner-text |Drop)
+                  :on-click $ fn (e d!)
+                    hint-fn $ Fn respo.schema/RespoEvent
+                      Fn app.schema/ClientOp $ -> Unit
+                      -> Unit
+                    d! $ app.schema/LocalOp :dashboard $ schema/DashboardState :pop? true :draft | :time (host/now-ms)
+                    browser/set-timeout!
+                      fn () $ adapter/focus-input!
+                      , 200
+                    , &unit
+              =< nil 16
+              keyed-> ({})
+                ->
+                  map-list-kv timedrops $ fn (id item) item
+                  sort $ fn (a b)
+                    - (:time b) (:time a)
+                  map $ fn (timedrop)
+                    keyed-component (:id timedrop)
+                      comp-timedrop
+                        .includes? confirming $ :id timedrop
+                        , timedrop
+              comp-modal
+                {} (:title |Demo)
+                  :style $ {} $ :width 400
+                  :container-style $ {}
+                  :render $ fn (on-close)
+                    div
+                      {} $ :style $ {} (:min-width 260)
+                      <>
+                        adapter/format-time (:time state) "|MM-DD HH:mm:ss"
+                        {} (:font-size 24) (:font-family ui/font-fancy)
+                      div ({})
+                        input $ {} (:class-name |input)
+                          :style $ merge ui/input $ {} (:width |100%)
+                          :value $ :draft state
+                          :placeholder "|Some notes"
+                          :on-input $ fn (e d!)
+                            hint-fn $ Fn respo.schema/RespoEvent
+                              Fn app.schema/ClientOp $ -> Unit
+                              -> Unit
+                            d! $ app.schema/LocalOp :dashboard $ assoc state :draft (adapter/event-value e)
+                      =< nil 8
                       div
-                        {} $ :style $ {} (:min-width 260)
-                        <>
-                          adapter/format-time (:time state) "|MM-DD HH:mm:ss"
-                          {} (:font-size 24) (:font-family ui/font-fancy)
-                        div ({})
-                          input $ {} (:class-name |input)
-                            :style $ merge ui/input $ {} (:width |100%)
-                            :value $ :draft state
-                            :placeholder "|Some notes"
-                            :on-input $ fn (e d!)
-                              hint-fn $ Fn respo.schema/RespoEvent
-                                Fn app.schema/ClientOp $ -> Unit
-                                -> Unit
-                              d! $ app.schema/LocalOp :states cursor $ assoc state :draft (adapter/event-value e)
-                        =< nil 8
-                        div
-                          {} $ :style ui/row-parted
-                          span $ {}
-                          button $ {} (:style ui/button) (:inner-text |Submit)
-                            :on-click $ fn (e d!)
-                              hint-fn $ Fn respo.schema/RespoEvent
-                                Fn app.schema/ClientOp $ -> Unit
-                                -> Unit
-                              on-close d!
-                              d! $ app.schema/Op :timedrop/create-one $ app.schema/TimedropInput :time (:time state) :text (:draft state)
-                  :pop? state
-                  fn (d!)
-                    d! $ app.schema/LocalOp :states cursor $ assoc state :pop? false
+                        {} $ :style ui/row-parted
+                        span $ {}
+                        button $ {} (:style ui/button) (:inner-text |Submit)
+                          :on-click $ fn (e d!)
+                            hint-fn $ Fn respo.schema/RespoEvent
+                              Fn app.schema/ClientOp $ -> Unit
+                              -> Unit
+                            on-close d!
+                            d! $ app.schema/Op :timedrop/create-one $ app.schema/TimedropInput :time (:time state) :text (:draft state)
+                :pop? state
+                fn (d!)
+                  d! $ app.schema/LocalOp :dashboard $ assoc state :pop? false
           :examples $ []
-          :schema $ quote $ Fn Dynamic (Map String app.schema/Timedrop) (-> respo.schema/Component)
-        'read-state $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn read-state (states)
-            let
-                fallback $ {} (:pop? false) (:draft |) (:time 0)
-                raw $ .unwrap-or (get states :data) fallback
-                data $ if (nil? raw) fallback $ schema/data-map raw
-                normalized $ match (get data :time)
-                  (:none) (assoc data :time 0)
-                  (:some time)
-                    if (nil? time) (assoc data :time 0) data
-              decode-map-as normalized 'app.schema/DashboardState
-          :examples $ []
-          :schema $ quote $ Fn Dynamic (-> app.schema/DashboardState)
+          :schema $ quote $ Fn app.schema/DashboardState (Set String) (Map String app.schema/Timedrop) (-> respo.schema/Component)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.dashboard
           :require
             hsl.core :refer $ hsl
             app.schema :as schema
             respo-ui.core :as ui
-            respo.core :refer $ defcomp list-> >> <> span div button input
+            respo.core :refer $ defcomp keyed-> keyed-component <> span div button input
             respo.comp.space :refer $ =<
             app.config :as config
             app.comp.kit :refer $ comp-title
@@ -438,55 +425,43 @@
     'app.comp.login $ %{} 'FileEntry
       :defs $ {}
         'comp-login $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-login (states)
-            let
-                cursor $ decode-map-as
-                  .unwrap-or (get states :cursor) ([])
-                  List respo.schema/CoordKey
-                state $ match (get states :data)
-                  (:none) initial-state
-                  (:some raw)
-                    decode-map-as (schema/data-map raw) 'app.schema/LoginState
-              div
-                {} $ :style $ {} (:display :flex) (:align-items :center) (:justify-content :center)
-                div ({})
-                  div
-                    {} $ :style $ {}
-                    div ({})
-                      input $ {} (:placeholder |Username)
-                        :value $ :username state
-                        :style ui/input
-                        :on-input $ fn (e d!)
-                          hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/ClientOp $ -> Unit
-                            -> Unit
-                          d! $ app.schema/LocalOp :states cursor $ assoc state :username (adapter/event-value e)
-                    =< nil 8
-                    div ({})
-                      input $ {} (:placeholder |Password)
-                        :value $ :password state
-                        :style ui/input
-                        :on-input $ fn (e d!)
-                          hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/ClientOp $ -> Unit
-                            -> Unit
-                          d! $ app.schema/LocalOp :states cursor $ assoc state :password (adapter/event-value e)
+          :code $ quote $ defcomp comp-login (state)
+            div
+              {} $ :style $ {} (:display :flex) (:align-items :center) (:justify-content :center)
+              div ({})
+                div
+                  {} $ :style $ {}
+                  div ({})
+                    input $ {} (:placeholder |Username)
+                      :value $ :username state
+                      :style ui/input
+                      :on-input $ fn (e d!)
+                        hint-fn $ Fn respo.schema/RespoEvent
+                          Fn app.schema/ClientOp $ -> Unit
+                          -> Unit
+                        d! $ app.schema/LocalOp :login $ assoc state :username (adapter/event-value e)
                   =< nil 8
-                  div
-                    {} $ :style $ {} (:text-align :right)
-                    span $ {} (:inner-text "|Sign up")
-                      :style $ merge ui/link
-                      :on-click $ on-submit (:username state) (:password state) true
-                    =< 8 nil
-                    span $ {} (:inner-text "|Log in")
-                      :style $ merge ui/link
-                      :on-click $ on-submit (:username state) (:password state) false
+                  div ({})
+                    input $ {} (:placeholder |Password)
+                      :value $ :password state
+                      :style ui/input
+                      :on-input $ fn (e d!)
+                        hint-fn $ Fn respo.schema/RespoEvent
+                          Fn app.schema/ClientOp $ -> Unit
+                          -> Unit
+                        d! $ app.schema/LocalOp :login $ assoc state :password (adapter/event-value e)
+                =< nil 8
+                div
+                  {} $ :style $ {} (:text-align :right)
+                  span $ {} (:inner-text "|Sign up")
+                    :style $ merge ui/link
+                    :on-click $ on-submit (:username state) (:password state) true
+                  =< 8 nil
+                  span $ {} (:inner-text "|Log in")
+                    :style $ merge ui/link
+                    :on-click $ on-submit (:username state) (:password state) false
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> respo.schema/Component)
-        'initial-state $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def initial-state (schema/LoginState :username | :password |)
-          :examples $ []
-          :schema $ quote app.schema/LoginState
+          :schema $ quote $ Fn app.schema/LoginState (-> respo.schema/Component)
         'on-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-submit (username password signup?)
             fn (event dispatch!)
@@ -510,7 +485,6 @@
             respo.comp.space :refer $ =<
             respo.comp.inspect :refer $ comp-inspect
             respo-ui.core :as ui
-            app.schema :as schema
             app.style :as style
             app.config :as config
             js-ffi.browser :as browser
@@ -621,64 +595,52 @@
     'app.comp.timedrop $ %{} 'FileEntry
       :defs $ {} $ 'comp-timedrop
         %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-timedrop (states timedrop)
-            let
-                cursor $ append
-                  decode-map-as
-                    .unwrap-or (get states :cursor) ([])
-                    List respo.schema/CoordKey
-                  , :remove
-                show? $ = true $ .unwrap-or
-                  get
-                    .unwrap-or (get states :remove) ({})
-                    , :data
-                  , false
-              div
-                {} $ :style $ merge ui/row-parted
-                  {}
-                    :border-bottom $ str "|1px solid " $ hsl 0 0 94
-                    :padding "|8px 0"
-                span ({})
-                  <>
-                    adapter/format-time (:time timedrop) "|MM:DD HH:mm:ss"
-                    {} (:font-size 20) (:font-family ui/font-fancy)
-                  =< 8 nil
-                  <> (:text timedrop)
-                    {} (:font-size 12)
-                      :color $ hsl 0 0 70
-                span
-                  {}
-                    :style $ {}
-                      :color $ hsl 0 0 80
-                      :cursor :pointer
-                    :on-click $ fn (_event d!)
-                      hint-fn $ Fn respo.schema/RespoEvent
-                        Fn app.schema/ClientOp $ -> Unit
-                        -> Unit
-                      d! $ app.schema/LocalOp :states cursor true
-                  comp-i :x 16 $ hsl 200 80 70
-                comp-confirm-modal
-                  {} $ :text "|Sure to delete?"
-                  , show?
-                    fn (_info d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
-                        Fn app.schema/ClientOp $ -> Unit
-                        -> Unit
-                      d! $ app.schema/Op :timedrop/remove-one $ :id timedrop
-                    fn (d!)
-                      hint-fn $ Fn
-                        Fn app.schema/ClientOp $ -> Unit
-                        -> Unit
-                      d! $ app.schema/LocalOp :states cursor false
+          :code $ quote $ defcomp comp-timedrop (show? timedrop)
+            div
+              {} $ :style $ merge ui/row-parted
+                {}
+                  :border-bottom $ str "|1px solid " $ hsl 0 0 94
+                  :padding "|8px 0"
+              span ({})
+                <>
+                  adapter/format-time (:time timedrop) "|MM:DD HH:mm:ss"
+                  {} (:font-size 20) (:font-family ui/font-fancy)
+                =< 8 nil
+                <> (:text timedrop)
+                  {} (:font-size 12)
+                    :color $ hsl 0 0 70
+              span
+                {}
+                  :style $ {}
+                    :color $ hsl 0 0 80
+                    :cursor :pointer
+                  :on-click $ fn (_event d!)
+                    hint-fn $ Fn respo.schema/RespoEvent
+                      Fn app.schema/ClientOp $ -> Unit
+                      -> Unit
+                    d! $ app.schema/LocalOp :confirm-remove (:id timedrop) true
+                comp-i :x 16 $ hsl 200 80 70
+              comp-confirm-modal
+                {} $ :text "|Sure to delete?"
+                , show?
+                  fn (_info d!)
+                    hint-fn $ Fn (Map Tag Dynamic)
+                      Fn app.schema/ClientOp $ -> Unit
+                      -> Unit
+                    d! $ app.schema/Op :timedrop/remove-one $ :id timedrop
+                  fn (d!)
+                    hint-fn $ Fn
+                      Fn app.schema/ClientOp $ -> Unit
+                      -> Unit
+                    d! $ app.schema/LocalOp :confirm-remove (:id timedrop) false
           :examples $ []
-          :schema $ quote $ Fn Dynamic app.schema/Timedrop (-> respo.schema/Component)
+          :schema $ quote $ Fn Bool app.schema/Timedrop (-> respo.schema/Component)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.timedrop
           :require
             respo-ui.core :refer $ hsl
-            app.schema :as schema
             respo-ui.core :as ui
-            respo.core :refer $ defcomp list-> >> <> span div button input
+            respo.core :refer $ defcomp <> span div
             respo.comp.space :refer $ =<
             app.config :as config
             app.comp.kit :refer $ comp-title
@@ -720,14 +682,14 @@
           :examples $ []
           :schema $ quote StructDef
         'LocalOp $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defenum LocalOp
-            :states (List respo.schema/CoordKey) app.schema/LocalValue
+          :code $ quote $ defenum LocalOp (:login app.schema/LoginState) (:dashboard app.schema/DashboardState) (:confirm-remove String Bool)
           :examples $ []
           :schema $ quote EnumDef
-        'LocalValue $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defunion LocalValue DashboardState LoginState Bool
+        'LocalState $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct LocalState (:login app.schema/LoginState) (:dashboard app.schema/DashboardState)
+            :confirming $ Set String
           :examples $ []
-          :schema $ quote UnionDef
+          :schema $ quote StructDef
         'LoginState $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct LoginState (:username String) (:password String)
           :examples $ []
