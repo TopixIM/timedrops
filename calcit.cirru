@@ -232,7 +232,7 @@
                     {}
                     fn (info d!)
                       hint-fn $ Fn (Map Tag Dynamic)
-                        Fn app.schema/ClientOp $ -> Unit
+                        Fn schema/ClientOp $ -> Unit
                         -> Unit
                       d! $ app.schema/Op :session/remove-message $ decode-map-as
                         .unwrap $ get info :id
@@ -251,21 +251,21 @@
               span $ {} (:inner-text |Reset) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
-                    Fn app.schema/ClientOp $ -> Unit
+                    Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :reel/reset
               =< 8 nil
               span $ {} (:inner-text |Merge) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
-                    Fn app.schema/ClientOp $ -> Unit
+                    Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :reel/merge
               =< 8 nil
               span $ {} (:inner-text |Persist) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
-                    Fn app.schema/ClientOp $ -> Unit
+                    Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :effect/persist
           :examples $ []
@@ -288,7 +288,7 @@
                   :style $ {} (:cursor :pointer) (:line-height |32px)
                   :on-click $ fn (e d!)
                     hint-fn $ Fn respo.schema/RespoEvent
-                      Fn app.schema/ClientOp $ -> Unit
+                      Fn schema/ClientOp $ -> Unit
                       -> Unit
                     d! $ app.schema/Op :effect/connect
                 <> "|No connection..." $ {} (:font-family ui/font-fancy) (:font-size 24)
@@ -334,7 +334,7 @@
                 button $ {} (:style ui/button) (:inner-text |Drop)
                   :on-click $ fn (e d!)
                     hint-fn $ Fn respo.schema/RespoEvent
-                      Fn app.schema/ClientOp $ -> Unit
+                      Fn schema/ClientOp $ -> Unit
                       -> Unit
                     d! $ app.schema/LocalOp :dashboard $ schema/DashboardState :pop? true :draft | :time (host/now-ms)
                     browser/set-timeout!
@@ -369,7 +369,7 @@
                           :placeholder "|Some notes"
                           :on-input $ fn (e d!)
                             hint-fn $ Fn respo.schema/RespoEvent
-                              Fn app.schema/ClientOp $ -> Unit
+                              Fn schema/ClientOp $ -> Unit
                               -> Unit
                             d! $ app.schema/LocalOp :dashboard $ assoc state :draft (adapter/event-value e)
                       =< nil 8
@@ -379,7 +379,7 @@
                         button $ {} (:style ui/button) (:inner-text |Submit)
                           :on-click $ fn (e d!)
                             hint-fn $ Fn respo.schema/RespoEvent
-                              Fn app.schema/ClientOp $ -> Unit
+                              Fn schema/ClientOp $ -> Unit
                               -> Unit
                             on-close d!
                             d! $ app.schema/Op :timedrop/create-one $ app.schema/TimedropInput :time (:time state) :text (:draft state)
@@ -558,7 +558,7 @@
                     :style $ merge ui/button
                     :on-click $ fn (e d!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn app.schema/ClientOp $ -> Unit
+                        Fn schema/ClientOp $ -> Unit
                         -> Unit
                       adapter/refresh!
                   <> |Refresh
@@ -568,7 +568,7 @@
                     :style $ merge ui/button $ {} (:color :red) (:border-color :red)
                     :on-click $ fn (e dispatch!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn app.schema/ClientOp $ -> Unit
+                        Fn schema/ClientOp $ -> Unit
                         -> Unit
                       dispatch! $ app.schema/Op :user/log-out
                       browser/storage-remove! $ :storage-key config/site
