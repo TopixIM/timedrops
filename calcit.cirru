@@ -811,7 +811,7 @@
                       MapEntryDecision :keep id $ data-map timedrop
               decode-map-as normalized 'app.schema/Db
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Db)
+          :schema $ quote $ Fn Input (-> Db) (:generics Input)
           :tests $ []
             %{} 'TestEntry (:name |legacy-flat-map-and-nil-option)
               :code $ quote $ let
@@ -872,7 +872,7 @@
                 _ $ raise "|Unsupported operation"
               raise "|Expected operation enum"
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Op)
+          :schema $ quote $ Fn Input (-> Op) (:generics Input)
           :tests $ [] $ %{} 'TestEntry (:name |checked-operation-wire-roundtrip)
             :code $ quote $ let
                 original $ :: :timedrop/create-one $ {} (:time 1000) (:text |first)
@@ -909,7 +909,7 @@
           :code $ quote $ defn decode-router (raw)
             decode-map-as (normalize-router raw) 'app.schema/Router
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Router)
+          :schema $ quote $ Fn Input (-> Router) (:generics Input)
         'decode-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-store (raw)
             let
@@ -920,7 +920,7 @@
                   assoc :router $ normalize-optional-router-view $ .unwrap (get data :router)
               decode-map-as normalized 'app.schema/Store
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Store)
+          :schema $ quote $ Fn Input (-> Store) (:generics Input)
           :tests $ [] $ %{} 'TestEntry (:name |serialized-nominal-diff-patch-recovers-store)
             :code $ quote $ let
                 guest $ assoc session :id 7
@@ -1174,7 +1174,7 @@
         'on-exit! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-exit! ()
             .foldl @*tasks &unit $ fn (acc task)
-              hint-fn $ Fn Unit calcit.core/FfiTask $ -> Unit
+              hint-fn $ Fn Unit FfiTask $ -> Unit
               .cancel! task
             reset! *tasks $ []
             persist-db!
@@ -1345,7 +1345,7 @@
                 .len $ :sessions db
                 , :color $ rand-hex-color!
           :examples $ []
-          :schema $ quote $ Fn schema/Db schema/Session (List Dynamic) (-> schema/Store)
+          :schema $ quote $ Fn schema/Db schema/Session (List HistoryEntry) (-> schema/Store) (:generics HistoryEntry)
           :tests $ [] $ %{} 'TestEntry
             :name |projection-keeps-domain-model-and-hides-password
             :code $ quote $ let
