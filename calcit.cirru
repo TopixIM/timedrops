@@ -803,12 +803,7 @@
                     MapEntryDecision :keep id $ normalize-session value
                   assoc :users $ filter-map-kv users $ fn (id value)
                     MapEntryDecision :keep id $ normalize-user value
-                  assoc :timedrops $ filter-map-kv
-                    decode-map-as
-                      .unwrap $ get data :timedrops
-                      Map String Dynamic
-                    fn (id timedrop)
-                      MapEntryDecision :keep id $ data-map timedrop
+                  assoc :timedrops $ decode-timedrop-map $ .unwrap (get data :timedrops)
               decode-map-as normalized 'app.schema/Db
           :examples $ []
           :schema $ quote $ Fn Input (-> Db) (:generics Input)
@@ -944,6 +939,16 @@
               assert= before initial
               assert= after recovered
             :tags $ #{} :migration :unit
+        'decode-timedrop-map $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-timedrop-map (raw)
+            filter-map-kv
+              decode-map-as raw $ Map String Dynamic
+              fn (id row)
+                MapEntryDecision :keep id $ decode-map-as (data-map row) 'app.schema/Timedrop
+          :examples $ []
+          :schema $ quote $ Fn Input
+            -> $ Map String Timedrop
+            :generics Input
         'encode-op $ %{} 'CodeEntry
           :doc "|Legacy WebSocket encoding intentionally produces anonymous Cirru EDN enum values."
           :code $ quote $ defn encode-op (op)
@@ -1014,15 +1019,11 @@
           :code $ quote $ defn normalize-router-view (raw)
             let
                 data $ data-map raw
-                timedrops $ decode-map-as
-                  .unwrap $ get data :timedrops
-                  Map String Dynamic
+                timedrops $ decode-timedrop-map $ .unwrap (get data :timedrops)
                 members $ decode-map-as
                   .unwrap $ get data :members
                   Map Number Dynamic
-              ->
-                assoc data :timedrops $ filter-map-kv timedrops $ fn (id timedrop)
-                  MapEntryDecision :keep id $ data-map timedrop
+              -> (assoc data :timedrops timedrops)
                 assoc :members $ filter-map-kv members $ fn (id name)
                   MapEntryDecision :keep id $ decode-optional-string name
           :examples $ []
