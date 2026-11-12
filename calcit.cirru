@@ -802,7 +802,7 @@
                   assoc :sessions $ filter-map-kv sessions $ fn (id value)
                     MapEntryDecision :keep id $ normalize-session value
                   assoc :users $ filter-map-kv users $ fn (id value)
-                    MapEntryDecision :keep id $ normalize-user value
+                    MapEntryDecision :keep id $ decode-map-as (normalize-user value) 'app.schema/User
                   assoc :timedrops $ decode-timedrop-map $ .unwrap (get data :timedrops)
               decode-map-as normalized 'app.schema/Db
           :examples $ []
@@ -991,20 +991,22 @@
                 _ $ raise |Invalid-optional-router
               Some $ normalize-router-view raw
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Option $ Map Tag Dynamic
+          :schema $ quote $ Fn Input
+            -> $ Option RouterView
+            :generics Input
         'normalize-optional-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-optional-user (raw)
             if (nil? raw) None $ if (enum? raw)
               match raw
                 (:none) None
                 (:some value)
-                  Some $ normalize-user value
+                  Some $ decode-map-as (normalize-user value) 'app.schema/UserView
                 _ $ raise |Invalid-optional-user
-              Some $ normalize-user raw
+              Some $ decode-map-as (normalize-user raw) 'app.schema/UserView
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Option $ Map Tag Dynamic
+          :schema $ quote $ Fn Input
+            -> $ Option UserView
+            :generics Input
         'normalize-router $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-router (raw)
             without-legacy-nil
@@ -1023,29 +1025,31 @@
                 members $ decode-map-as
                   .unwrap $ get data :members
                   Map Number Dynamic
-              -> (assoc data :timedrops timedrops)
-                assoc :members $ filter-map-kv members $ fn (id name)
-                  MapEntryDecision :keep id $ decode-optional-string name
+              decode-map-as
+                -> (assoc data :timedrops timedrops)
+                  assoc :members $ filter-map-kv members $ fn (id name)
+                    MapEntryDecision :keep id $ decode-optional-string name
+                , 'app.schema/RouterView
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Map Tag Dynamic
+          :schema $ quote $ Fn Input (-> RouterView) (:generics Input)
         'normalize-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-session (raw)
             let
                 data $ data-map raw
                 route $ .unwrap-or (get data :router)
                   {} $ :name :home
-              -> data (without-legacy-nil :user-id) (without-legacy-nil :nickname)
-                assoc :router $ normalize-router route
-                assoc :messages $ filter-map-kv
-                  decode-map-as
-                    .unwrap-or (get data :messages) ({})
-                    Map String Dynamic
-                  fn (id message)
-                    MapEntryDecision :keep id $ data-map message
+              decode-map-as
+                -> data (without-legacy-nil :user-id) (without-legacy-nil :nickname)
+                  assoc :router $ decode-router route
+                  assoc :messages $ filter-map-kv
+                    decode-map-as
+                      .unwrap-or (get data :messages) ({})
+                      Map String Dynamic
+                    fn (id message)
+                      MapEntryDecision :keep id $ decode-map-as (data-map message) 'app.schema/Message
+                , 'app.schema/Session
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Map Tag Dynamic
+          :schema $ quote $ Fn Input (-> Session) (:generics Input)
         'normalize-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-user (raw)
             -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
