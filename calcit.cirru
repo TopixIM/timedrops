@@ -232,7 +232,7 @@
                     {}
                     fn (info d!)
                       hint-fn $ Fn (Map Tag Dynamic)
-                        Fn app.schema/ClientOp $ -> Unit
+                        Fn schema/ClientOp $ -> Unit
                         -> Unit
                       d! $ app.schema/Op :session/remove-message $ decode-map-as
                         .unwrap $ get info :id
@@ -251,21 +251,21 @@
               span $ {} (:inner-text |Reset) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
-                    Fn app.schema/ClientOp $ -> Unit
+                    Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :reel/reset
               =< 8 nil
               span $ {} (:inner-text |Merge) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
-                    Fn app.schema/ClientOp $ -> Unit
+                    Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :reel/merge
               =< 8 nil
               span $ {} (:inner-text |Persist) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
-                    Fn app.schema/ClientOp $ -> Unit
+                    Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :effect/persist
           :examples $ []
@@ -288,7 +288,7 @@
                   :style $ {} (:cursor :pointer) (:line-height |32px)
                   :on-click $ fn (e d!)
                     hint-fn $ Fn respo.schema/RespoEvent
-                      Fn app.schema/ClientOp $ -> Unit
+                      Fn schema/ClientOp $ -> Unit
                       -> Unit
                     d! $ app.schema/Op :effect/connect
                 <> "|No connection..." $ {} (:font-family ui/font-fancy) (:font-size 24)
@@ -334,7 +334,7 @@
                 button $ {} (:style ui/button) (:inner-text |Drop)
                   :on-click $ fn (e d!)
                     hint-fn $ Fn respo.schema/RespoEvent
-                      Fn app.schema/ClientOp $ -> Unit
+                      Fn schema/ClientOp $ -> Unit
                       -> Unit
                     d! $ app.schema/LocalOp :dashboard $ schema/DashboardState :pop? true :draft | :time (host/now-ms)
                     browser/set-timeout!
@@ -369,7 +369,7 @@
                           :placeholder "|Some notes"
                           :on-input $ fn (e d!)
                             hint-fn $ Fn respo.schema/RespoEvent
-                              Fn app.schema/ClientOp $ -> Unit
+                              Fn schema/ClientOp $ -> Unit
                               -> Unit
                             d! $ app.schema/LocalOp :dashboard $ assoc state :draft (adapter/event-value e)
                       =< nil 8
@@ -379,7 +379,7 @@
                         button $ {} (:style ui/button) (:inner-text |Submit)
                           :on-click $ fn (e d!)
                             hint-fn $ Fn respo.schema/RespoEvent
-                              Fn app.schema/ClientOp $ -> Unit
+                              Fn schema/ClientOp $ -> Unit
                               -> Unit
                             on-close d!
                             d! $ app.schema/Op :timedrop/create-one $ app.schema/TimedropInput :time (:time state) :text (:draft state)
@@ -558,7 +558,7 @@
                     :style $ merge ui/button
                     :on-click $ fn (e d!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn app.schema/ClientOp $ -> Unit
+                        Fn schema/ClientOp $ -> Unit
                         -> Unit
                       adapter/refresh!
                   <> |Refresh
@@ -568,7 +568,7 @@
                     :style $ merge ui/button $ {} (:color :red) (:border-color :red)
                     :on-click $ fn (e dispatch!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn app.schema/ClientOp $ -> Unit
+                        Fn schema/ClientOp $ -> Unit
                         -> Unit
                       dispatch! $ app.schema/Op :user/log-out
                       browser/storage-remove! $ :storage-key config/site
@@ -802,16 +802,11 @@
                   assoc :sessions $ filter-map-kv sessions $ fn (id value)
                     MapEntryDecision :keep id $ normalize-session value
                   assoc :users $ filter-map-kv users $ fn (id value)
-                    MapEntryDecision :keep id $ normalize-user value
-                  assoc :timedrops $ filter-map-kv
-                    decode-map-as
-                      .unwrap $ get data :timedrops
-                      Map String Dynamic
-                    fn (id timedrop)
-                      MapEntryDecision :keep id $ data-map timedrop
+                    MapEntryDecision :keep id $ decode-map-as (normalize-user value) 'app.schema/User
+                  assoc :timedrops $ decode-timedrop-map $ .unwrap (get data :timedrops)
               decode-map-as normalized 'app.schema/Db
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Db)
+          :schema $ quote $ Fn Input (-> Db) (:generics Input)
           :tests $ []
             %{} 'TestEntry (:name |legacy-flat-map-and-nil-option)
               :code $ quote $ let
@@ -872,7 +867,7 @@
                 _ $ raise "|Unsupported operation"
               raise "|Expected operation enum"
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Op)
+          :schema $ quote $ Fn Input (-> Op) (:generics Input)
           :tests $ [] $ %{} 'TestEntry (:name |checked-operation-wire-roundtrip)
             :code $ quote $ let
                 original $ :: :timedrop/create-one $ {} (:time 1000) (:text |first)
@@ -909,7 +904,7 @@
           :code $ quote $ defn decode-router (raw)
             decode-map-as (normalize-router raw) 'app.schema/Router
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Router)
+          :schema $ quote $ Fn Input (-> Router) (:generics Input)
         'decode-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-store (raw)
             let
@@ -920,7 +915,7 @@
                   assoc :router $ normalize-optional-router-view $ .unwrap (get data :router)
               decode-map-as normalized 'app.schema/Store
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Store)
+          :schema $ quote $ Fn Input (-> Store) (:generics Input)
           :tests $ [] $ %{} 'TestEntry (:name |serialized-nominal-diff-patch-recovers-store)
             :code $ quote $ let
                 guest $ assoc session :id 7
@@ -944,6 +939,16 @@
               assert= before initial
               assert= after recovered
             :tags $ #{} :migration :unit
+        'decode-timedrop-map $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-timedrop-map (raw)
+            filter-map-kv
+              decode-map-as raw $ Map String Dynamic
+              fn (id row)
+                MapEntryDecision :keep id $ decode-map-as (data-map row) 'app.schema/Timedrop
+          :examples $ []
+          :schema $ quote $ Fn Input
+            -> $ Map String Timedrop
+            :generics Input
         'encode-op $ %{} 'CodeEntry
           :doc "|Legacy WebSocket encoding intentionally produces anonymous Cirru EDN enum values."
           :code $ quote $ defn encode-op (op)
@@ -986,20 +991,22 @@
                 _ $ raise |Invalid-optional-router
               Some $ normalize-router-view raw
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Option $ Map Tag Dynamic
+          :schema $ quote $ Fn Input
+            -> $ Option RouterView
+            :generics Input
         'normalize-optional-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-optional-user (raw)
             if (nil? raw) None $ if (enum? raw)
               match raw
                 (:none) None
                 (:some value)
-                  Some $ normalize-user value
+                  Some $ decode-map-as (normalize-user value) 'app.schema/UserView
                 _ $ raise |Invalid-optional-user
-              Some $ normalize-user raw
+              Some $ decode-map-as (normalize-user raw) 'app.schema/UserView
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Option $ Map Tag Dynamic
+          :schema $ quote $ Fn Input
+            -> $ Option UserView
+            :generics Input
         'normalize-router $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-router (raw)
             without-legacy-nil
@@ -1014,37 +1021,35 @@
           :code $ quote $ defn normalize-router-view (raw)
             let
                 data $ data-map raw
-                timedrops $ decode-map-as
-                  .unwrap $ get data :timedrops
-                  Map String Dynamic
+                timedrops $ decode-timedrop-map $ .unwrap (get data :timedrops)
                 members $ decode-map-as
                   .unwrap $ get data :members
                   Map Number Dynamic
-              ->
-                assoc data :timedrops $ filter-map-kv timedrops $ fn (id timedrop)
-                  MapEntryDecision :keep id $ data-map timedrop
-                assoc :members $ filter-map-kv members $ fn (id name)
-                  MapEntryDecision :keep id $ decode-optional-string name
+              decode-map-as
+                -> (assoc data :timedrops timedrops)
+                  assoc :members $ filter-map-kv members $ fn (id name)
+                    MapEntryDecision :keep id $ decode-optional-string name
+                , 'app.schema/RouterView
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Map Tag Dynamic
+          :schema $ quote $ Fn Input (-> RouterView) (:generics Input)
         'normalize-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-session (raw)
             let
                 data $ data-map raw
                 route $ .unwrap-or (get data :router)
                   {} $ :name :home
-              -> data (without-legacy-nil :user-id) (without-legacy-nil :nickname)
-                assoc :router $ normalize-router route
-                assoc :messages $ filter-map-kv
-                  decode-map-as
-                    .unwrap-or (get data :messages) ({})
-                    Map String Dynamic
-                  fn (id message)
-                    MapEntryDecision :keep id $ data-map message
+              decode-map-as
+                -> data (without-legacy-nil :user-id) (without-legacy-nil :nickname)
+                  assoc :router $ decode-router route
+                  assoc :messages $ filter-map-kv
+                    decode-map-as
+                      .unwrap-or (get data :messages) ({})
+                      Map String Dynamic
+                    fn (id message)
+                      MapEntryDecision :keep id $ decode-map-as (data-map message) 'app.schema/Message
+                , 'app.schema/Session
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Map Tag Dynamic
+          :schema $ quote $ Fn Input (-> Session) (:generics Input)
         'normalize-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-user (raw)
             -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
@@ -1174,7 +1179,7 @@
         'on-exit! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-exit! ()
             .foldl @*tasks &unit $ fn (acc task)
-              hint-fn $ Fn Unit calcit.core/FfiTask $ -> Unit
+              hint-fn $ Fn Unit FfiTask $ -> Unit
               .cancel! task
             reset! *tasks $ []
             persist-db!
@@ -1345,7 +1350,7 @@
                 .len $ :sessions db
                 , :color $ rand-hex-color!
           :examples $ []
-          :schema $ quote $ Fn schema/Db schema/Session (List Dynamic) (-> schema/Store)
+          :schema $ quote $ Fn schema/Db schema/Session (List HistoryEntry) (-> schema/Store) (:generics HistoryEntry)
           :tests $ [] $ %{} 'TestEntry
             :name |projection-keeps-domain-model-and-hides-password
             :code $ quote $ let
