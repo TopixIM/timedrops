@@ -1078,8 +1078,9 @@
               (:none) (dissoc data key)
               (:some value) (assoc data key value)
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) Tag
+          :schema $ quote $ Fn (Map Tag Field) Tag
             -> $ Map Tag Dynamic
+            :generics Field
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
           :require
