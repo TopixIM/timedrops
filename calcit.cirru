@@ -804,7 +804,7 @@
                   assoc :sessions $ filter-map-kv sessions $ fn (id value)
                     MapEntryDecision :keep id $ normalize-session value
                   assoc :users $ filter-map-kv users $ fn (id value)
-                    MapEntryDecision :keep id $ decode-map-as (normalize-user value) 'app.schema/User
+                    MapEntryDecision :keep id $ decode-user value
                   assoc :timedrops $ decode-timedrop-map $ .unwrap (get data :timedrops)
               decode-map-as normalized 'app.schema/Db
           :examples $ []
@@ -956,6 +956,20 @@
           :schema $ quote $ Fn Input
             -> $ Map String Timedrop
             :generics Input
+        'decode-user $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-user (raw)
+            decode-map-as
+              -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
+              , 'app.schema/User
+          :examples $ []
+          :schema $ quote $ Fn Input (-> User) (:generics Input)
+        'decode-user-view $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-user-view (raw)
+            decode-map-as
+              -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
+              , 'app.schema/UserView
+          :examples $ []
+          :schema $ quote $ Fn Input (-> UserView) (:generics Input)
         'encode-op $ %{} 'CodeEntry
           :doc "|Legacy WebSocket encoding intentionally produces anonymous Cirru EDN enum values."
           :code $ quote $ defn encode-op (op)
@@ -1007,9 +1021,9 @@
               match raw
                 (:none) None
                 (:some value)
-                  Some $ decode-map-as (normalize-user value) 'app.schema/UserView
+                  Some $ decode-user-view value
                 _ $ raise |Invalid-optional-user
-              Some $ decode-map-as (normalize-user raw) 'app.schema/UserView
+              Some $ decode-user-view raw
           :examples $ []
           :schema $ quote $ Fn Input
             -> $ Option UserView
@@ -1047,13 +1061,6 @@
                 , 'app.schema/Session
           :examples $ []
           :schema $ quote $ Fn Input (-> Session) (:generics Input)
-        'normalize-user $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn normalize-user (raw)
-            -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
-          :examples $ []
-          :schema $ quote $ Fn Input
-            -> $ Map Tag Dynamic
-            :generics Input
         'router $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def router
             Router :name :home :title None :data nil :router nil
