@@ -621,9 +621,6 @@
                 {} $ :text "|Sure to delete?"
                 , show?
                   fn (_info d!)
-                    hint-fn $ Fn (Map Tag Dynamic)
-                      Fn app.schema/ClientOp $ -> Unit
-                      -> Unit
                     d! $ app.schema/Op :timedrop/remove-one $ :id timedrop
                   fn (d!)
                     hint-fn $ Fn
