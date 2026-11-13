@@ -905,7 +905,11 @@
             :generics Input
         'decode-router $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-router (raw)
-            decode-map-as (normalize-router raw) 'app.schema/Router
+            let
+                data $ merge
+                  {} (:name :home) (:data nil) (:router nil)
+                  data-map raw
+              decode-map-as (without-legacy-nil data :title) 'app.schema/Router
           :examples $ []
           :schema $ quote $ Fn Input (-> Router) (:generics Input)
         'decode-store $ %{} 'CodeEntry (:doc |)
@@ -1009,17 +1013,6 @@
           :examples $ []
           :schema $ quote $ Fn Input
             -> $ Option UserView
-            :generics Input
-        'normalize-router $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn normalize-router (raw)
-            without-legacy-nil
-              merge
-                {} (:name :home) (:data nil) (:router nil)
-                data-map raw
-              , :title
-          :examples $ []
-          :schema $ quote $ Fn Input
-            -> $ Map Tag Dynamic
             :generics Input
         'normalize-router-view $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-router-view (raw)
