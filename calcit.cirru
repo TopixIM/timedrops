@@ -247,21 +247,21 @@
             div
               {} $ :class-name css-reel
               <> $ str "|Length: " size
-              =< 8 nil
+              space-x 8
               span $ {} (:inner-text |Reset) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
                     Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :reel/reset
-              =< 8 nil
+              space-x 8
               span $ {} (:inner-text |Merge) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
                     Fn schema/ClientOp $ -> Unit
                     -> Unit
                   d! $ app.schema/Op :reel/merge
-              =< 8 nil
+              space-x 8
               span $ {} (:inner-text |Persist) (:class-name css-click)
                 :on-click $ fn (_event d!)
                   hint-fn $ Fn respo.schema/RespoEvent
@@ -314,7 +314,7 @@
             respo-ui.core :as ui
             respo.core :refer $ defcomp <> div span action-> cursor-> button
             respo.comp.inspect :refer $ comp-inspect
-            respo.comp.space :refer $ =<
+            respo.comp.space :refer $ space-x
             app.comp.navigation :refer $ comp-navigation
             app.comp.profile :refer $ comp-profile
             app.comp.login :refer $ comp-login
@@ -341,7 +341,7 @@
                       fn () $ adapter/focus-input!
                       , 200
                     , &unit
-              =< nil 16
+              space-y 16
               keyed-> ({})
                 ->
                   map-list-kv timedrops $ fn (id item) item
@@ -372,7 +372,7 @@
                               Fn schema/ClientOp $ -> Unit
                               -> Unit
                             d! $ app.schema/LocalOp :dashboard $ assoc state :draft (adapter/event-value e)
-                      =< nil 8
+                      space-y 8
                       div
                         {} $ :style ui/row-parted
                         span $ {}
@@ -395,7 +395,7 @@
             app.schema :as schema
             respo-ui.core :as ui
             respo.core :refer $ defcomp keyed-> keyed-component <> span div button input
-            respo.comp.space :refer $ =<
+            respo.comp.space :refer $ space-y
             app.config :as config
             app.comp.kit :refer $ comp-title
             app.comp.timedrop :refer $ comp-timedrop
@@ -437,7 +437,7 @@
                           Fn app.schema/ClientOp $ -> Unit
                           -> Unit
                         d! $ app.schema/LocalOp :login $ assoc state :username (adapter/event-value e)
-                  =< nil 8
+                  space-y 8
                   div ({})
                     input $ {} (:placeholder |Password)
                       :value $ :password state
@@ -447,13 +447,13 @@
                           Fn app.schema/ClientOp $ -> Unit
                           -> Unit
                         d! $ app.schema/LocalOp :login $ assoc state :password (adapter/event-value e)
-                =< nil 8
+                space-y 8
                 div
                   {} $ :style $ {} (:text-align :right)
                   span $ {} (:inner-text "|Sign up")
                     :style $ merge ui/link
                     :on-click $ on-submit (:username state) (:password state) true
-                  =< 8 nil
+                  space-x 8
                   span $ {} (:inner-text "|Log in")
                     :style $ merge ui/link
                     :on-click $ on-submit (:username state) (:password state) false
@@ -479,7 +479,7 @@
         :code $ quote $ ns app.comp.login
           :require
             respo.core :refer $ defcomp <> div input button span
-            respo.comp.space :refer $ =<
+            respo.comp.space :refer $ space-x space-y
             respo.comp.inspect :refer $ comp-inspect
             respo-ui.core :as ui
             app.style :as style
@@ -515,7 +515,7 @@
                       -> Unit
                     d! $ app.schema/Op :router/change $ assoc app.schema/router :name :profile
                 <> $ if logged-in? |Me |Guest
-                =< 8 nil
+                space-x 8
                 <> $ str count-members
           :examples $ []
           :schema $ quote $ Fn Bool Number (-> respo.schema/Component)
@@ -524,7 +524,7 @@
           :require
             respo-ui.core :refer $ hsl
             respo-ui.core :as ui
-            respo.comp.space :refer $ =<
+            respo.comp.space :refer $ space-x
             respo.core :refer $ defcomp <> action-> span div
             app.config :as config
     'app.comp.profile $ %{} 'FileEntry
@@ -537,11 +537,11 @@
               div
                 {} $ :style $ {} (:font-family ui/font-fancy) (:font-size 32) (:font-weight 100)
                 <> $ str "|Hello! " $ :name user
-              =< nil 16
+              space-y 16
               div
                 {} $ :style ui/row
                 <> |Members:
-                =< 8 nil
+                space-x 8
                 list->
                   {} $ :style ui/row
                   map-list-kv members $ fn (id username)
@@ -551,7 +551,7 @@
                         :border-radius |16px
                         :margin "|0 4px"
                       <> $ .unwrap-or username |
-              =< nil 48
+              space-y 48
               div ({})
                 button
                   {}
@@ -562,7 +562,7 @@
                         -> Unit
                       adapter/refresh!
                   <> |Refresh
-                =< 8 nil
+                space-x 8
                 button
                   {}
                     :style $ merge ui/button $ {} (:color :red) (:border-color :red)
@@ -584,7 +584,7 @@
             app.schema :as schema
             respo-ui.core :as ui
             respo.core :refer $ defcomp list-> <> span div button
-            respo.comp.space :refer $ =<
+            respo.comp.space :refer $ space-x space-y
             app.config :as config
             js-ffi.browser :as browser
             js-ffi.shared :as host
@@ -602,7 +602,7 @@
                 <>
                   adapter/format-time (:time timedrop) "|MM:DD HH:mm:ss"
                   {} (:font-size 20) (:font-family ui/font-fancy)
-                =< 8 nil
+                space-x 8
                 <> (:text timedrop)
                   {} (:font-size 12)
                     :color $ hsl 0 0 70
@@ -638,7 +638,7 @@
             respo-ui.core :refer $ hsl
             respo-ui.core :as ui
             respo.core :refer $ defcomp <> span div
-            respo.comp.space :refer $ =<
+            respo.comp.space :refer $ space-x
             app.config :as config
             app.comp.kit :refer $ comp-title
             feather.core :refer $ comp-i
