@@ -231,9 +231,6 @@
                           :text $ :text message
                     {}
                     fn (info d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
-                        Fn schema/ClientOp $ -> Unit
-                        -> Unit
                       d! $ app.schema/Op :session/remove-message $ decode-map-as
                         .unwrap $ get info :id
                         , 'String
