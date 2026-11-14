@@ -763,8 +763,7 @@
           :schema $ quote StructDef
         'data-map $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn data-map (raw)
-            if (struct? raw)
-              decode-map-as (&struct:to-map raw) (Map Tag Dynamic)
+            if (struct? raw) (&struct:to-map raw)
               decode-map-as raw $ Map Tag Dynamic
           :examples $ []
           :schema $ quote $ Fn Input
