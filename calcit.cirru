@@ -231,9 +231,6 @@
                           :text $ :text message
                     {}
                     fn (info d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
-                        Fn schema/ClientOp $ -> Unit
-                        -> Unit
                       d! $ app.schema/Op :session/remove-message $ decode-map-as
                         .unwrap $ get info :id
                         , 'String
@@ -621,9 +618,6 @@
                 {} $ :text "|Sure to delete?"
                 , show?
                   fn (_info d!)
-                    hint-fn $ Fn (Map Tag Dynamic)
-                      Fn app.schema/ClientOp $ -> Unit
-                      -> Unit
                     d! $ app.schema/Op :timedrop/remove-one $ :id timedrop
                   fn (d!)
                     hint-fn $ Fn
@@ -766,8 +760,7 @@
           :schema $ quote StructDef
         'data-map $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn data-map (raw)
-            if (struct? raw)
-              decode-map-as (&struct:to-map raw) (Map Tag Dynamic)
+            if (struct? raw) (&struct:to-map raw)
               decode-map-as raw $ Map Tag Dynamic
           :examples $ []
           :schema $ quote $ Fn Input
@@ -804,7 +797,7 @@
                   assoc :sessions $ filter-map-kv sessions $ fn (id value)
                     MapEntryDecision :keep id $ normalize-session value
                   assoc :users $ filter-map-kv users $ fn (id value)
-                    MapEntryDecision :keep id $ decode-map-as (normalize-user value) 'app.schema/User
+                    MapEntryDecision :keep id $ decode-user value
                   assoc :timedrops $ decode-timedrop-map $ .unwrap (get data :timedrops)
               decode-map-as normalized 'app.schema/Db
           :examples $ []
@@ -842,11 +835,13 @@
                 (:session/connect) (Op :session/connect)
                 (:session/disconnect) (Op :session/disconnect)
                 (:session/remove-message payload)
-                  Op :session/remove-message $ if (string? payload) payload $ decode-map-as
-                    .unwrap $ get
-                      decode-map-as payload $ Map Tag Dynamic
-                      , :id
-                    , 'String
+                  Op :session/remove-message $ if (string? payload) payload $ if
+                    and (map? payload)
+                      every? (keys payload) tag?
+                    decode-map-as
+                      .unwrap $ get payload :id
+                      , String
+                    raise |Invalid-message-removal-payload
                 (:user/log-in credentials)
                   Op :user/log-in $ decode-credentials credentials
                 (:user/sign-up credentials)
@@ -870,26 +865,47 @@
               raise "|Expected operation enum"
           :examples $ []
           :schema $ quote $ Fn Input (-> Op) (:generics Input)
-          :tests $ [] $ %{} 'TestEntry (:name |checked-operation-wire-roundtrip)
-            :code $ quote $ let
-                original $ :: :timedrop/create-one $ {} (:time 1000) (:text |first)
-                typed $ decode-op original
-              assert= original $ encode-op typed
-              assert=
-                Op :user/log-in $ assert-type ([] |Ada |secret) (Tuple String String)
-                decode-op $ :: :user/log-in $ [] |Ada |secret
-              assert= true $ try
-                do
-                  decode-op $ :: :user/log-in $ [] |Ada
-                  , false
-                fn (error) true
-              assert= (:: :reel/reset)
-                encode-op $ decode-op $ :: :reel/reset
-              assert= (:: :reel/merge)
-                encode-op $ decode-op $ :: :reel/merge
-              assert= (:: :effect/persist)
-                encode-op $ decode-op $ :: :effect/persist
-            :tags $ #{} :migration :unit
+          :tests $ []
+            %{} 'TestEntry (:name |checked-operation-wire-roundtrip)
+              :code $ quote $ let
+                  original $ :: :timedrop/create-one $ {} (:time 1000) (:text |first)
+                  typed $ decode-op original
+                assert= original $ encode-op typed
+                assert=
+                  Op :user/log-in $ assert-type ([] |Ada |secret) (Tuple String String)
+                  decode-op $ :: :user/log-in $ [] |Ada |secret
+                assert= true $ try
+                  do
+                    decode-op $ :: :user/log-in $ [] |Ada
+                    , false
+                  fn (error) true
+                assert= (:: :reel/reset)
+                  encode-op $ decode-op $ :: :reel/reset
+                assert= (:: :reel/merge)
+                  encode-op $ decode-op $ :: :reel/merge
+                assert= (:: :effect/persist)
+                  encode-op $ decode-op $ :: :effect/persist
+              :tags $ #{} :migration :unit
+            %{} 'TestEntry (:name |legacy-message-removal)
+              :code $ quote $ let
+                  operation $ Op :session/remove-message |msg
+                  legacy $ :: :session/remove-message $ {} (:id |msg) (:index 2) (:time 1000) (:token |legacy)
+                assert= operation $ decode-op $ :: :session/remove-message |msg
+                assert= operation $ decode-op legacy
+                assert=
+                  :: :session/remove-message $ {} $ :id |msg
+                  encode-op operation
+                assert= true $ try
+                  do
+                    decode-op $ :: :session/remove-message $ {} (:id 2)
+                    , false
+                  fn (_error) true
+                assert= true $ try
+                  do
+                    decode-op $ :: :session/remove-message $ {} (:id |msg) (|extension 2)
+                    , false
+                  fn (_error) true
+              :tags $ #{} :migration :unit
         'decode-optional-string $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-optional-string (raw)
             if (nil? raw) None $ if (enum? raw)
@@ -905,7 +921,11 @@
             :generics Input
         'decode-router $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-router (raw)
-            decode-map-as (normalize-router raw) 'app.schema/Router
+            let
+                data $ merge
+                  {} (:name :home) (:data nil) (:router nil)
+                  data-map raw
+              decode-map-as (without-legacy-nil data :title) 'app.schema/Router
           :examples $ []
           :schema $ quote $ Fn Input (-> Router) (:generics Input)
         'decode-store $ %{} 'CodeEntry (:doc |)
@@ -952,6 +972,20 @@
           :schema $ quote $ Fn Input
             -> $ Map String Timedrop
             :generics Input
+        'decode-user $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-user (raw)
+            decode-map-as
+              -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
+              , 'app.schema/User
+          :examples $ []
+          :schema $ quote $ Fn Input (-> User) (:generics Input)
+        'decode-user-view $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-user-view (raw)
+            decode-map-as
+              -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
+              , 'app.schema/UserView
+          :examples $ []
+          :schema $ quote $ Fn Input (-> UserView) (:generics Input)
         'encode-op $ %{} 'CodeEntry
           :doc "|Legacy WebSocket encoding intentionally produces anonymous Cirru EDN enum values."
           :code $ quote $ defn encode-op (op)
@@ -1003,23 +1037,12 @@
               match raw
                 (:none) None
                 (:some value)
-                  Some $ decode-map-as (normalize-user value) 'app.schema/UserView
+                  Some $ decode-user-view value
                 _ $ raise |Invalid-optional-user
-              Some $ decode-map-as (normalize-user raw) 'app.schema/UserView
+              Some $ decode-user-view raw
           :examples $ []
           :schema $ quote $ Fn Input
             -> $ Option UserView
-            :generics Input
-        'normalize-router $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn normalize-router (raw)
-            without-legacy-nil
-              merge
-                {} (:name :home) (:data nil) (:router nil)
-                data-map raw
-              , :title
-          :examples $ []
-          :schema $ quote $ Fn Input
-            -> $ Map Tag Dynamic
             :generics Input
         'normalize-router-view $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-router-view (raw)
@@ -1054,13 +1077,6 @@
                 , 'app.schema/Session
           :examples $ []
           :schema $ quote $ Fn Input (-> Session) (:generics Input)
-        'normalize-user $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn normalize-user (raw)
-            -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
-          :examples $ []
-          :schema $ quote $ Fn Input
-            -> $ Map Tag Dynamic
-            :generics Input
         'router $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def router
             Router :name :home :title None :data nil :router nil
@@ -1078,8 +1094,9 @@
               (:none) (dissoc data key)
               (:some value) (assoc data key value)
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) Tag
+          :schema $ quote $ Fn (Map Tag Field) Tag
             -> $ Map Tag Dynamic
+            :generics Field
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
           :require
