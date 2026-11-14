@@ -925,7 +925,15 @@
                 data $ merge
                   {} (:name :home) (:data nil) (:router nil)
                   data-map raw
-              decode-map-as (without-legacy-nil data :title) 'app.schema/Router
+              Router :name
+                decode-map-as
+                  .unwrap $ get data :name
+                  , 'Tag
+                , :title
+                  .and-then (get data :title) decode-optional-string
+                  , :data
+                    .unwrap $ get data :data
+                    , :router $ .unwrap $ get data :router
           :examples $ []
           :schema $ quote $ Fn Input (-> Router) (:generics Input)
         'decode-store $ %{} 'CodeEntry (:doc |)
@@ -974,16 +982,40 @@
             :generics Input
         'decode-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-user (raw)
-            decode-map-as
-              -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
-              , 'app.schema/User
+            let
+                data $ data-map raw
+              User :id
+                decode-map-as
+                  .unwrap $ get data :id
+                  , 'String
+                , :name
+                  decode-map-as
+                    .unwrap $ get data :name
+                    , 'String
+                  , :password
+                    decode-map-as
+                      .unwrap $ get data :password
+                      , 'String
+                    , :nickname
+                      .and-then (get data :nickname) decode-optional-string
+                      , :avatar $ .and-then (get data :avatar) decode-optional-string
           :examples $ []
           :schema $ quote $ Fn Input (-> User) (:generics Input)
         'decode-user-view $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-user-view (raw)
-            decode-map-as
-              -> (data-map raw) (without-legacy-nil :nickname) (without-legacy-nil :avatar)
-              , 'app.schema/UserView
+            let
+                data $ data-map raw
+              UserView :id
+                decode-map-as
+                  .unwrap $ get data :id
+                  , 'String
+                , :name
+                  decode-map-as
+                    .unwrap $ get data :name
+                    , 'String
+                  , :nickname
+                    .and-then (get data :nickname) decode-optional-string
+                    , :avatar $ .and-then (get data :avatar) decode-optional-string
           :examples $ []
           :schema $ quote $ Fn Input (-> UserView) (:generics Input)
         'encode-op $ %{} 'CodeEntry
@@ -1065,16 +1097,21 @@
                 data $ data-map raw
                 route $ .unwrap-or (get data :router)
                   {} $ :name :home
-              decode-map-as
-                -> data (without-legacy-nil :user-id) (without-legacy-nil :nickname)
-                  assoc :router $ decode-router route
-                  assoc :messages $ filter-map-kv
-                    decode-map-as
-                      .unwrap-or (get data :messages) ({})
-                      Map String Dynamic
-                    fn (id message)
-                      MapEntryDecision :keep id $ decode-map-as (data-map message) 'app.schema/Message
-                , 'app.schema/Session
+                messages $ filter-map-kv
+                  decode-map-as
+                    .unwrap-or (get data :messages) ({})
+                    Map String Dynamic
+                  fn (id message)
+                    MapEntryDecision :keep id $ decode-map-as (data-map message) 'app.schema/Message
+              Session :id
+                decode-map-as
+                  .unwrap $ get data :id
+                  , 'Number
+                , :user-id
+                  .and-then (get data :user-id) decode-optional-string
+                  , :nickname
+                    .and-then (get data :nickname) decode-optional-string
+                    , :router (decode-router route) :messages messages
           :examples $ []
           :schema $ quote $ Fn Input (-> Session) (:generics Input)
         'router $ %{} 'CodeEntry (:doc |)
@@ -1087,16 +1124,6 @@
             Session :id 0 :user-id None :nickname None :router router :messages $ {}
           :examples $ []
           :schema $ quote Session
-        'without-legacy-nil $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn without-legacy-nil (data key)
-            match
-              .and-then (get data key) decode-optional-string
-              (:none) (dissoc data key)
-              (:some value) (assoc data key value)
-          :examples $ []
-          :schema $ quote $ Fn (Map Tag Field) Tag
-            -> $ Map Tag Dynamic
-            :generics Field
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
           :require
