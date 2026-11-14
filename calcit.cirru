@@ -863,26 +863,42 @@
               raise "|Expected operation enum"
           :examples $ []
           :schema $ quote $ Fn Input (-> Op) (:generics Input)
-          :tests $ [] $ %{} 'TestEntry (:name |checked-operation-wire-roundtrip)
-            :code $ quote $ let
-                original $ :: :timedrop/create-one $ {} (:time 1000) (:text |first)
-                typed $ decode-op original
-              assert= original $ encode-op typed
-              assert=
-                Op :user/log-in $ assert-type ([] |Ada |secret) (Tuple String String)
-                decode-op $ :: :user/log-in $ [] |Ada |secret
-              assert= true $ try
-                do
-                  decode-op $ :: :user/log-in $ [] |Ada
-                  , false
-                fn (error) true
-              assert= (:: :reel/reset)
-                encode-op $ decode-op $ :: :reel/reset
-              assert= (:: :reel/merge)
-                encode-op $ decode-op $ :: :reel/merge
-              assert= (:: :effect/persist)
-                encode-op $ decode-op $ :: :effect/persist
-            :tags $ #{} :migration :unit
+          :tests $ []
+            %{} 'TestEntry (:name |checked-operation-wire-roundtrip)
+              :code $ quote $ let
+                  original $ :: :timedrop/create-one $ {} (:time 1000) (:text |first)
+                  typed $ decode-op original
+                assert= original $ encode-op typed
+                assert=
+                  Op :user/log-in $ assert-type ([] |Ada |secret) (Tuple String String)
+                  decode-op $ :: :user/log-in $ [] |Ada |secret
+                assert= true $ try
+                  do
+                    decode-op $ :: :user/log-in $ [] |Ada
+                    , false
+                  fn (error) true
+                assert= (:: :reel/reset)
+                  encode-op $ decode-op $ :: :reel/reset
+                assert= (:: :reel/merge)
+                  encode-op $ decode-op $ :: :reel/merge
+                assert= (:: :effect/persist)
+                  encode-op $ decode-op $ :: :effect/persist
+              :tags $ #{} :migration :unit
+            %{} 'TestEntry (:name |legacy-message-removal)
+              :code $ quote $ let
+                  operation $ Op :session/remove-message |msg
+                  legacy $ :: :session/remove-message $ {} (:id |msg) (:index 2) (:time 1000) (:token |legacy)
+                assert= operation $ decode-op $ :: :session/remove-message |msg
+                assert= operation $ decode-op legacy
+                assert=
+                  :: :session/remove-message $ {} $ :id |msg
+                  encode-op operation
+                assert= true $ try
+                  do
+                    decode-op $ :: :session/remove-message $ {} (:id 2)
+                    , false
+                  fn (_error) true
+              :tags $ #{} :migration :unit
         'decode-optional-string $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-optional-string (raw)
             if (nil? raw) None $ if (enum? raw)
