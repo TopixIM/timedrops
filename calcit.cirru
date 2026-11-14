@@ -835,11 +835,13 @@
                 (:session/connect) (Op :session/connect)
                 (:session/disconnect) (Op :session/disconnect)
                 (:session/remove-message payload)
-                  Op :session/remove-message $ if (string? payload) payload $ decode-map-as
-                    .unwrap $ get
-                      decode-map-as payload $ Map Tag Dynamic
-                      , :id
-                    , 'String
+                  Op :session/remove-message $ if (string? payload) payload $ if
+                    and (map? payload)
+                      every? (keys payload) tag?
+                    decode-map-as
+                      .unwrap $ get payload :id
+                      , String
+                    raise |Invalid-message-removal-payload
                 (:user/log-in credentials)
                   Op :user/log-in $ decode-credentials credentials
                 (:user/sign-up credentials)
@@ -896,6 +898,11 @@
                 assert= true $ try
                   do
                     decode-op $ :: :session/remove-message $ {} (:id 2)
+                    , false
+                  fn (_error) true
+                assert= true $ try
+                  do
+                    decode-op $ :: :session/remove-message $ {} (:id |msg) (|extension 2)
                     , false
                   fn (_error) true
               :tags $ #{} :migration :unit
